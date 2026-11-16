@@ -143,6 +143,21 @@ function stockTotal(){
   return {sum:Math.round(sum*100)/100, filled};
 }
 
+/* 页面上的项数文案跟着清单走，增删物料后不会对不上 */
+function syncCopy(){
+  const c={}; MATERIALS.forEach(m=>c[m.cat]=(c[m.cat]||0)+1);
+  const t=c['食材原料']||0, p=c['包装物料']||0, ot=c['其它']||0, n=MATERIALS.length;
+  const note=document.querySelector('#view-stock .note');
+  if(note)note.textContent='预置总部报货表全部 '+n+' 项原料（食材 '+t+' · 包装 '+p+' · 其它 '+ot+'，食材统一按斤），首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。';
+  const sel=$('ckCat');
+  if(sel&&sel.options.length>=5){
+    sel.options[0].text='食材原料（'+t+' 项）';
+    sel.options[1].text='包装物料（'+p+' 项）';
+    sel.options[2].text='其它（'+ot+' 项）';
+    sel.options[4].text='全部（'+n+' 项 + 自购）';
+  }
+}
+
 /* ============ 日报 ============ */
 function renderDaily(){
   $('fDate').value=todayStr();
@@ -494,6 +509,7 @@ $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
+syncCopy();
 window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].includes(v))show(v);});
 $('shopName').textContent=S.shopName;
 show((location.hash||'#/daily').slice(2)||'daily');
