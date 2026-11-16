@@ -82,7 +82,7 @@ function renderStock(){
   if(!list.length){box.innerHTML='<div class="mini">这一类还没有原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
     const low=false;
-    const v=m.stock==null?'未建账':(m.stock+' '+(m.unit||''));
+    const v=m.stock==null?'—':(m.stock+' '+(m.unit||''));
     const tag=m.stock==null?'<span class="tag gray">未建账</span>':'<span class="tag ok">已建账</span>';
     const ref='';
     const hq='';
@@ -250,5 +250,6 @@ $('stCat').onchange=renderStock;
 $('ckCat').onchange=renderCheck;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','setting'].includes(v))show(v);});
 $('shopName').textContent=S.shopName;
 show((location.hash||'#/daily').slice(2)||'daily');
