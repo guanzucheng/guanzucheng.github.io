@@ -103,7 +103,6 @@ function logAdd(type,label,detail){
 }
 
 /* ============ 物料 ============ */
-function lowLine(m){return 1;}
 function itemList(){
   const out=[];
   S.materials.forEach((m,i)=>out.push({key:'M'+i,m}));
@@ -151,13 +150,10 @@ function renderStock(){
   const box=$('stockList');
   if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
-    const low=false;
     const v=m.stock==null?'—':(m.stock+' '+(m.unit||''));
     const tag=m.stock==null?'<span class="tag gray">未建账</span>':'<span class="tag ok">已建账</span>';
-    const ref='';
-    const hq='';
-    return `<div class="item"><div><div class="nm">${m.n}</div><div class="sub">${m.cat||'门店自购'}${ref}${hq}</div></div>
-      <div class="val" style="${low?'color:var(--warn)':''}">${v}</div>${tag}</div>`;
+    return `<div class="item"><div><div class="nm">${m.n}</div><div class="sub">${m.cat||'门店自购'}</div></div>
+      <div class="val">${v}</div>${tag}</div>`;
   }).join('');
   $('sItem').innerHTML=list.map(({key,m})=>`<option value="${key}">${m.n}（${m.unit||''}）</option>`).join('');
 }
@@ -172,6 +168,7 @@ function stockApply(){
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
   logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||''));
   save(); $('sQty').value='';
+  if($('stQ').value){$('stQ').value='';}
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
 }
@@ -238,7 +235,7 @@ function updateCkTotal(){
   $('ckDiff').textContent=`已填 ${filled.length} / ${ckRows.length} 项 · 差异量合计 ${Math.round(sum*100)/100}`;
 }
 function saveCheck(){
-  const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
+  const filled=ckRows.filter(r=>r.real!=null&&r.real!=="");
   if(!filled.length){toast('还没填实盘数');return;}
   S.checks.push({date:todayStr(),rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
@@ -267,10 +264,8 @@ function renderLog(){
     const d=dateOf(l.at);
     if(d!==last){out+='<div class="mini" style="margin:10px 0 2px;font-weight:600;color:var(--ink-2)">'+d+'</div>';last=d;}
     const t=LOG_TAG[l.type]||['动作','tag gray'];
-    out+='<div class="item"><div><div class="nm" style="font-weight:500">'+l.label
-      +'<span class="tag '+t[1]+"" style="margin-left:6px">'+t[0]+'</span></div>'
-      +'<div class="sub">'+(l.detail||'')+'</div></div>'
-      +'<div class="val mini">'+hhmm(l.at)+'</div></div>';
+    const tagHtml=`<span class="tag ${t[1]}" style="margin-left:6px">${t[0]}</span>`;
+    out+=`<div class="item"><div><div class="nm" style="font-weight:500">${l.label}${tagHtml}</div><div class="sub">${l.detail||''}</div></div><div class="val mini">${hhmm(l.at)}</div></div>`;
   });
   box.innerHTML=out;
 }
@@ -301,7 +296,11 @@ function download(name,content,type){
   a.href=URL.createObjectURL(blob); a.download=name; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1500);
 }
-function csvEscape(v){const s=v==null?'':String(v);return /[\",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function csvEscape(v){
+  const s=v==null?'':String(v);
+  const need=s.indexOf('"')>=0||s.indexOf(',')>=0||s.indexOf('\n')>=0;
+  return need?'"'+s.split('"').join('""')+'"':s;
+}
 function expJson(){download('门店数据备份-'+todayStr()+'.json',JSON.stringify(S,null,2),'application/json');toast('已导出 JSON');}
 function expCsv(){
   const head=['日期','总营业额','堂食(元)','团购(单)','外卖(单)','今日总结'];
