@@ -1,4 +1,4 @@
-/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3），单价为总部成本核算参考价（元/对应单位），门店可在库存页自行修改，改动只存本机 */
+/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3） */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -77,7 +77,7 @@ const MATERIALS = [
   {n:'帽子',unit:'顶',cat:'其它',stock:null},
 ];
 
-/* 总部成本核算参考单价（元/对应单位），门店可改；未列项为未定价，门店自己填 */
+/* 参考单价（元/对应单位），门店可改；未列项为未定价，门店自己填 */
 const REF_PRICES={
   '胡辣汤料':43,'面筋':3,'木耳':32,'虫草花':28,'秘制料油':15,'去皮鲜山药':6.8,
   '小麦淀粉':1.9,'基豆':6,'花江豆':6.4,'赤小豆':4,'云豆':7,'高粱米':2.12,'麦仁':1.74,
@@ -168,12 +168,12 @@ function submitDaily(){
 }
 
 /* ============ 库存 ============ */
-/* 剩余库存总金额汇总块固定放在库存账卡片最下方（页面里它可能在卡片顶部） */
+/* 剩余库存总金额固定放在库存账卡片最下方 */
 function sumEl(){
   let el=$('stVal');
   if(!el){el=document.createElement('div');el.id='stVal';}
   const card=$('stockList')?$('stockList').closest('.card'):null;
-  if(card&&el.parentNode!==card)card.appendChild(el);
+  if(card&&card.lastElementChild!==el)card.appendChild(el);
   el.style.marginTop='12px';
   el.style.paddingTop='10px';
   el.style.borderTop='1px solid var(--line)';
