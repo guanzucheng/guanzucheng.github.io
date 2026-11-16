@@ -1,4 +1,4 @@
-/* 原料清单：76 项（食材 65 · 包装 8 · 其它 3）；食材统一按「斤」，包装按个/条/张/捆，工装按件/顶 */
+/* 原料清单：76 项（食材 65 · 包装 8 · 其它 3）；食材统一按「斤」，包装按个/条/包/掴，工装按件/顶 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -70,7 +70,7 @@ const MATERIALS = [
   {n:'胡辣汤打包纸碗',unit:'个',cat:'包装物料',stock:null},
   {n:'外卖纸杯',unit:'条',cat:'包装物料',stock:null},
   {n:'托盘',unit:'个',cat:'包装物料',stock:null},
-  {n:'垫纸',unit:'张',cat:'包装物料',stock:null},
+  {n:'一次性垫筐纸',unit:'包',cat:'包装物料',stock:null},
   {n:'大打包袋',unit:'捆',cat:'包装物料',stock:null},
   {n:'小打包袋',unit:'捆',cat:'包装物料',stock:null},
   {n:'围裙',unit:'件',cat:'其它',stock:null},
@@ -104,14 +104,14 @@ function mergeMaterials(arr){
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], prod:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], mig:'u2'};}
+function seed(){return {shopName:'我的门店', records:[], prod:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], mig:'u3'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.prod=o.prod||[];
   const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
   o.materials=mergeMaterials(o.materials);
   /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
-  if(o.mig!=='u2'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u2';saveRaw(o);}
+  if(o.mig!=='u3'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u3';saveRaw(o);}
   return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
@@ -170,7 +170,7 @@ const PROD_F=[
   {k:'leftCost',n:'剩余原料成本',u:'元'},
   {k:'loss',n:'损耗',u:'斤'}
 ];
-const BLOCK_STYLE='font-size:13px;font-weight:600;color:var(--interactive-normal,var(--ink-2));margin:18px 0 -4px;letter-spacing:.5px';
+const BLOCK_STYLE='font-size:13px;font-weight:600;color:var(--ink-2);margin:18px 0 -4px;letter-spacing:.5px';
 function pnum(id){const el=$(id);if(!el)return null;return el.value===''?null:Number(el.value);}
 function prodRow(d){return (S.prod||[]).find(r=>r.date===d);}
 function lossRate(r){
@@ -196,7 +196,7 @@ function buildProdUI(){
   const card=document.createElement('div');card.id='prodCard';card.className='card';
   const f3=PROD_F.slice(0,3).map(f=>'<div class="field"><label>'+f.n+'（'+f.u+'）</label><input type="number" id="pd_'+f.k+'" inputmode="decimal" placeholder="0"></div>').join('');
   const f2=PROD_F.slice(3).map(f=>'<div class="field"><label>'+f.n+'（'+f.u+'）</label><input type="number" id="pd_'+f.k+'" inputmode="decimal" placeholder="0"></div>').join('');
-  card.innerHTML='<h2>原料生产与损耗</h2><p class="hint">每天收工前填一次：今天用了多少料、出了多少成品、剩多少、损耗多少。店长按天看损耗率，就能发现料是不是用超了</p>'
+  card.innerHTML='<h2>原料生产与损耗</h2><p class="hint">每天收工前填一次：今天用了多少料、出了多少成品、剩多少、损耗多少。店长按天看损耗率，就能看出料是不是用超了</p>'
     +'<div class="row three">'+f3+'</div>'
     +'<div class="row two" style="margin-top:10px">'+f2+'</div>'
     +'<div style="margin-top:12px"><button class="btn ghost" id="btnProd" type="button">保存今天的生产与损耗</button></div>'
@@ -211,9 +211,9 @@ function buildProdHist(){
   const lab=document.createElement('div');lab.style.cssText=BLOCK_STYLE;lab.textContent='② 原料生产与损耗';
   vr.appendChild(lab);
   const card=document.createElement('div');card.id='prodHistCard';card.className='card';
-  card.innerHTML='<h2>生产与损耗流水</h2><p class="hint">每天一条，从新到旧；底部是近 30 天的合计和平均损耗率</p>
-<div class="list" id="prodList"></div>
-<p class="mini" id="prodSum" style="margin-top:10px"></p>';
+  card.innerHTML='<h2>生产与损耗流水</h2><p class="hint">每天一条，从新到旧；底部是近 30 天的合计与平均损耗率</p>'
+    +'<div class="list" id="prodList"></div>'
+    +'<p class="mini" id="prodSum" style="margin-top:10px"></p>';
   vr.appendChild(card);
 }
 function renderProd(){
