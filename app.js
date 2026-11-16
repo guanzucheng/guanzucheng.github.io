@@ -1,4 +1,4 @@
-/* 原料清单：21 项通用原料名称，不含备货量、不含价格、不含成本 */
+/* 原料清单：75 项原料名称与单位（食材 65 · 包装 7 · 其它 3），不含备货量、单价、适用范围与供应归属 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -7,10 +7,64 @@ const MATERIALS = [
   {n:'白胡椒粉',unit:'斤',cat:'食材原料',stock:null},
   {n:'秘制料油',unit:'斤',cat:'食材原料',stock:null},
   {n:'去皮鲜山药',unit:'斤',cat:'食材原料',stock:null},
+  {n:'鲜牛肉',unit:'斤',cat:'食材原料',stock:null},
+  {n:'小麦淀粉',unit:'斤',cat:'食材原料',stock:null},
+  {n:'玉米淀粉',unit:'斤',cat:'食材原料',stock:null},
+  {n:'太太乐鸡精',unit:'箱',cat:'食材原料',stock:null},
+  {n:'基豆',unit:'斤',cat:'食材原料',stock:null},
+  {n:'花江豆',unit:'斤',cat:'食材原料',stock:null},
+  {n:'赤小豆',unit:'斤',cat:'食材原料',stock:null},
+  {n:'云豆',unit:'斤',cat:'食材原料',stock:null},
+  {n:'高粱米',unit:'斤',cat:'食材原料',stock:null},
+  {n:'麦仁',unit:'斤',cat:'食材原料',stock:null},
+  {n:'大枣（无核）',unit:'斤',cat:'食材原料',stock:null},
+  {n:'江米',unit:'斤',cat:'食材原料',stock:null},
+  {n:'莲子',unit:'斤',cat:'食材原料',stock:null},
+  {n:'花生',unit:'斤',cat:'食材原料',stock:null},
+  {n:'红曲米',unit:'斤',cat:'食材原料',stock:null},
+  {n:'小米',unit:'斤',cat:'食材原料',stock:null},
+  {n:'南瓜',unit:'斤',cat:'食材原料',stock:null},
+  {n:'黄豆',unit:'袋',cat:'食材原料',stock:null},
+  {n:'消泡剂',unit:'袋',cat:'食材原料',stock:null},
+  {n:'豆腐王',unit:'袋',cat:'食材原料',stock:null},
+  {n:'青菜',unit:'斤',cat:'食材原料',stock:null},
+  {n:'自己炸豆腐皮',unit:'斤',cat:'食材原料',stock:null},
+  {n:'熟白芝麻',unit:'斤',cat:'食材原料',stock:null},
   {n:'豆沫料',unit:'斤',cat:'食材原料',stock:null},
+  {n:'豆沫专用粉条',unit:'斤',cat:'食材原料',stock:null},
+  {n:'小米面',unit:'斤',cat:'食材原料',stock:null},
   {n:'粉条',unit:'斤',cat:'食材原料',stock:null},
   {n:'辣椒面',unit:'斤',cat:'食材原料',stock:null},
   {n:'包子料',unit:'斤',cat:'食材原料',stock:null},
+  {n:'雪菜',unit:'箱',cat:'食材原料',stock:null},
+  {n:'大蒜',unit:'斤',cat:'食材原料',stock:null},
+  {n:'牛肉馅',unit:'斤',cat:'食材原料',stock:null},
+  {n:'牛油',unit:'斤',cat:'食材原料',stock:null},
+  {n:'羊油',unit:'斤',cat:'食材原料',stock:null},
+  {n:'葱',unit:'斤',cat:'食材原料',stock:null},
+  {n:'姜',unit:'斤',cat:'食材原料',stock:null},
+  {n:'老抽',unit:'升',cat:'食材原料',stock:null},
+  {n:'鸡蛋',unit:'斤',cat:'食材原料',stock:null},
+  {n:'碱面',unit:'斤',cat:'食材原料',stock:null},
+  {n:'胡萝卜',unit:'斤',cat:'食材原料',stock:null},
+  {n:'豆腐',unit:'斤',cat:'食材原料',stock:null},
+  {n:'茄子',unit:'斤',cat:'食材原料',stock:null},
+  {n:'香菇',unit:'斤',cat:'食材原料',stock:null},
+  {n:'青辣椒',unit:'斤',cat:'食材原料',stock:null},
+  {n:'包子面',unit:'袋',cat:'食材原料',stock:null},
+  {n:'包子专用粉条',unit:'斤',cat:'食材原料',stock:null},
+  {n:'麻辣鲜',unit:'箱',cat:'食材原料',stock:null},
+  {n:'油条面',unit:'袋',cat:'食材原料',stock:null},
+  {n:'小香葱',unit:'斤',cat:'食材原料',stock:null},
+  {n:'糯米粉',unit:'斤',cat:'食材原料',stock:null},
+  {n:'白糖',unit:'斤',cat:'食材原料',stock:null},
+  {n:'味精',unit:'斤',cat:'食材原料',stock:null},
+  {n:'酵母（梅山牌）',unit:'箱',cat:'食材原料',stock:null},
+  {n:'无铝泡打粉（梅山牌）',unit:'箱',cat:'食材原料',stock:null},
+  {n:'大豆混合油',unit:'桶',cat:'食材原料',stock:null},
+  {n:'菜籽油',unit:'桶',cat:'食材原料',stock:null},
+  {n:'纯正香油',unit:'斤',cat:'食材原料',stock:null},
+  {n:'盐',unit:'箱',cat:'食材原料',stock:null},
   {n:'胡辣汤碗',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤勺',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤打包',unit:'套',cat:'包装物料',stock:null},
@@ -23,11 +77,16 @@ const MATERIALS = [
   {n:'帽子',unit:'顶',cat:'其它',stock:null},
 ];
 
+function mergeMaterials(arr){
+  const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
+  return MATERIALS.map(m=>{const o=old[m.n]; return o?{...m,stock:o.stock==null?null:o.stock}:{...m};});
+}
+
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[], operators:['店长','店员一','店员二'], currentBy:'店长'};}
 let S=load();
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.operators=(o.operators&&o.operators.length)?o.operators:['店长','店员一','店员二'];if(!o.currentBy||o.operators.indexOf(o.currentBy)<0)o.currentBy=o.operators[0]||'';if(!o.materials||!o.materials.length)o.materials=MATERIALS.map(m=>({...m}));return o;}}catch(e){}return seed();}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.operators=(o.operators&&o.operators.length)?o.operators:['店长','店员一','店员二'];if(!o.currentBy||o.operators.indexOf(o.currentBy)<0)o.currentBy=o.operators[0]||'';o.materials=mergeMaterials(o.materials);return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
 const $=id=>document.getElementById(id);
@@ -125,9 +184,10 @@ function submitDaily(){
 /* ============ 库存 ============ */
 function renderStock(){
   const cat=($('stCat')&&$('stCat').value)||'全部';
-  const list=itemList().filter(({m})=>cat==='全部'||(m.cat||'门店自购')===cat);
+  const q=(($('stQ')&&$('stQ').value)||'').trim();
+  const list=itemList().filter(({m})=>(cat==='全部'||(m.cat||'门店自购')===cat)&&(!q||m.n.indexOf(q)>=0));
   const box=$('stockList');
-  if(!list.length){box.innerHTML='<div class="mini">这一类还没有原料</div>';}
+  if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
     const low=false;
     const v=m.stock==null?'—':(m.stock+' '+(m.unit||''));
@@ -336,6 +396,7 @@ $('btnExpCsv').onclick=expCsv;
 $('btnExpCk').onclick=expCk;
 $('btnReset').onclick=resetAll;
 $('stCat').onchange=renderStock;
+$('stQ').oninput=renderStock;
 $('ckCat').onchange=renderCheck;
 $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
