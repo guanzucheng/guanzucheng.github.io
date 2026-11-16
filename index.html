@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>豫膳煌 门店日报与库存（单机版）</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b4551c'/%3E%3Cpath d='M9 20h14M11 20v-5a5 5 0 0 1 10 0v5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#1d1a17; --ink-2:#5b5450; --ink-3:#8b827c;
+  --line:#e3ded7; --bg:#faf8f5; --card:#fff;
+  --accent:#b4551c; --accent-soft:#f4e7dc;
+  --ok:#2f6b46; --warn:#a8321c;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.55; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 70px;min-width:0}
+header.top{position:sticky;top:0;z-index:20;background:rgba(250,248,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.top-in{max-width:860px;margin:0 auto;padding:11px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.5px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.shop{margin-left:auto;font-size:13px;color:var(--ink-2)}
+select,input[type=text],input[type=number],textarea{
+  font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;
+}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:30px}
+textarea{resize:vertical;min-height:64px}
+nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(250,248,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+.tabs-in{max-width:860px;margin:0 auto;padding:0 10px;display:flex}
+.tabs-in button{font:inherit;background:none;border:0;padding:11px 15px;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs-in button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:14px 0}
+.card h2{font-size:16px;margin:0 0 4px}
+.hint{color:var(--ink-3);font-size:12.5px;margin:0 0 10px}
+.row{display:grid;gap:10px}
+.two{grid-template-columns:1fr 1fr}
+.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:560px){.two,.three{grid-template-columns:1fr}}
+.field label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:4px}
+.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:#fff;padding:11px 16px;cursor:pointer;width:100%}
+.btn.ghost{background:#fff;color:var(--accent)}
+.btn.plain{background:#fff;color:var(--ink-2);border-color:var(--line);width:auto;padding:7px 12px;font-weight:500}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.tag.gray{background:#f1eeea;color:var(--ink-2)}
+.tag.ok{background:#e7f0ea;color:var(--ok)}
+.tag.warn{background:#fbeae6;color:var(--warn)}
+.list{display:grid;gap:8px}
+.item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
+.item:last-child{border-bottom:0}
+.item .nm{font-weight:600}
+.item .sub{color:var(--ink-3);font-size:12px}
+.item .val{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
+.mini{font-size:12px;color:var(--ink-3)}
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--ink-2);font-weight:600;background:#f7f4f0}
+.note{background:#fdf7f1;border:1px solid #f0dfd0;color:#6f4a2d;border-radius:8px;padding:10px 12px;font-size:12.5px;margin:14px 0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+footer{margin-top:24px;color:var(--ink-3);font-size:12px;text-align:center}
+h1.title{font-size:19px;margin:16px 0 2px}
+h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="dot"></span>豫膳煌 · 门店小账本</div>
+    <span class="shop" id="shopName">我的门店</span>
+  </div>
+  <nav class="tabs"><div class="tabs-in">
+    <button data-view="daily" class="on">今日日报</button>
+    <button data-view="stock">库存</button>
+    <button data-view="check">月度盘点</button>
+    <button data-view="record">历史记录</button>
+    <button data-view="setting">设置</button>
+  </div></nav>
+</header>
+
+<div class="wrap">
+
+<!-- ===== 视图：今日日报 ===== -->
+<section id="view-daily">
+  <h1 class="title">今日日报<span>总金额 + 三个渠道 + 一句话总结</span></h1>
+  <div class="card">
+    <div class="row two">
+      <div class="field"><label>营业日期</label><input type="text" id="fDate" readonly></div>
+      <div class="field"><label>总营业额（元）</label><input type="number" id="fRev" inputmode="decimal" placeholder="例如 1860"></div>
+    </div>
+    <div class="row three" style="margin-top:10px">
+      <div class="field"><label>堂食（元）</label><input type="number" id="fDine" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>团购单量（单）</label><input type="number" id="fGroup" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>外卖单量（单）</label><input type="number" id="fTake" inputmode="numeric" placeholder="0"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="field">
+      <label>今日总结（可选）</label>
+      <textarea id="fNote" placeholder="今天的情况、异常、明天要注意的事"></textarea>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="btnSave" type="button">保存今天的日报</button></div>
+    <p class="hint" style="margin-top:10px">数据只存在这台设备上；同一天再存会覆盖原有记录。</p>
+  </div>
+  <div class="card">
+    <h2>最近 7 天</h2>
+    <div class="list" id="recentList"></div>
+  </div>
+</section>
+
+<!-- ===== 视图：库存 ===== -->
+<section id="view-stock" hidden>
+  <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
+  <div class="note">预置 21 项常用原料（食材 11 · 包装 7 · 其它 3）。首次是“未建账”，入库后开始算；你店里其它原料，自己在下面“门店自购”里加。</div>
+  <div class="card">
+    <h2>库存账</h2>
+    <p class="hint">按品类筛选；入库后显示实时账面</p>
+    <select id="stCat" style="max-width:180px;margin-bottom:10px">
+      <option value="全部">全部品类</option>
+      <option value="食材原料">食材原料</option>
+      <option value="包装物料">包装物料</option>
+      <option value="其它">其它</option>
+      <option value="门店自购">门店自购</option>
+    </select>
+    <div class="list" id="stockList"></div>
+  </div>
+  <div class="card">
+    <h2>记一笔</h2>
+    <div class="row two">
+      <div class="field"><label>原料</label><select id="sItem"></select></div>
+      <div class="field"><label>数量</label><input type="number" id="sQty" inputmode="decimal" placeholder="按该原料单位"></div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field"><label>类型</label><select id="sType"><option value="in">入库</option><option value="out">领用出库</option></select></div>
+      <div class="field"><label>经手人</label><input type="text" id="sBy" placeholder="姓名"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn ghost" id="btnStock" type="button">记一笔</button></div>
+  </div>
+  <div class="card">
+    <h2>门店自购原料</h2>
+    <p class="hint">葱姜蒜、青菜、鸡蛋、各种油等，都在这里自己加，加进来就能一起盘</p>
+    <div class="row three">
+      <div class="field"><label>名称</label><input type="text" id="cmName" placeholder="例如 一次性手套"></div>
+      <div class="field"><label>单位</label><input type="text" id="cmUnit" placeholder="袋 / 斤 / 个"></div>
+      <div class="field"><label>期初账面</label><input type="number" id="cmQty" placeholder="0"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn ghost" id="btnAddCustom" type="button">加入清单</button></div>
+    <div class="list" id="customList" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- ===== 视图：月度盘点 ===== -->
+<section id="view-check" hidden>
+  <h1 class="title">月度盘点<span>账实对不对，一眼看见</span></h1>
+  <div class="card">
+    <h2 id="ckTitle">本月盘点</h2>
+    <p class="hint">填实盘数，系统自动算差异；保存后可在历史记录里回看</p>
+    <div class="row two">
+      <div class="field"><label>盘点日期</label><input type="text" id="ckDate" readonly></div>
+      <div class="field"><label>盘点人</label><input type="text" id="ckBy" placeholder="姓名"></div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field">
+        <label>先盘哪一类</label>
+        <select id="ckCat">
+          <option value="食材原料">食材原料（11 项）</option>
+          <option value="包装物料">包装物料（7 项）</option>
+          <option value="其它">其它（3 项）</option>
+          <option value="门店自购">门店自购</option>
+          <option value="全部">全部</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;margin-top:12px">
+      <table>
+        <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+        <thead><tr><th>原料</th><th>账面</th><th>实盘</th><th>差异</th></tr></thead>
+        <tbody id="ckBody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="btnCk" type="button">保存本月盘点</button></div>
+    <p class="hint" style="margin-top:10px" id="ckDiff">已填 0 项</p>
+  </div>
+  <div class="card">
+    <h2>历月盘点</h2>
+    <div class="list" id="ckHistory"></div>
+  </div>
+</section>
+
+<!-- ===== 视图：历史记录 ===== -->
+<section id="view-record" hidden>
+  <h1 class="title">历史记录<span>日报和盘点的全部留底</span></h1>
+  <div class="card">
+    <h2>日报流水</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <colgroup><col style="width:26%"><col style="width:20%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
+        <thead><tr><th>日期</th><th>总金额</th><th>堂食</th><th>团购</th><th>外卖</th></tr></thead>
+        <tbody id="recBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>小计</h2>
+    <div class="list" id="recSum"></div>
+  </div>
+</section>
+
+<!-- ===== 视图：设置 ===== -->
+<section id="view-setting" hidden>
+  <h1 class="title">设置<span>门店名、数据备份、清空</span></h1>
+  <div class="card">
+    <h2>门店名称</h2>
+    <p class="hint">显示在页面顶部，只影响本机显示</p>
+    <div class="row two">
+      <div class="field"><label>门店名</label><input type="text" id="setShop" placeholder="例如 郑州二七万达店"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn ghost" id="btnShop" type="button">保存门店名</button></div>
+  </div>
+  <div class="card">
+    <h2>数据备份</h2>
+    <p class="hint">数据只在这台设备里，换手机或清缓存就没了，建议每周导一次</p>
+    <div class="bar">
+      <button class="btn plain" id="btnExpJson" type="button">导出全部数据（JSON）</button>
+      <button class="btn plain" id="btnExpCsv" type="button">导出日报（CSV / Excel 可开）</button>
+      <button class="btn plain" id="btnExpCk" type="button">导出盘点（CSV）</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>清空数据</h2>
+    <p class="hint">不可恢复，清空前先导出备份</p>
+    <button class="btn plain" id="btnReset" type="button">清空本机全部数据</button>
+  </div>
+</section>
+
+<footer>单机版 · 数据只存在你自己的浏览器 · 不用注册、不产生费用</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
