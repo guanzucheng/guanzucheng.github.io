@@ -81,6 +81,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <button data-view="stock">库存</button>
     <button data-view="check">月度盘点</button>
     <button data-view="record">历史记录</button>
+    <button data-view="log">操作日志</button>
     <button data-view="setting">设置</button>
   </div></nav>
 </header>
@@ -93,7 +94,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <div class="card">
     <div class="row two">
       <div class="field"><label>营业日期</label><input type="text" id="fDate" readonly></div>
-      <div class="field"><label>总营业额（元）</label><input type="number" id="fRev" inputmode="decimal" placeholder="例如 1860"></div>
+      <div class="field"><label>总营业额（所有渠道金额，元）</label><input type="number" id="fRev" inputmode="decimal" placeholder="例如 1860"></div>
     </div>
     <div class="row three" style="margin-top:10px">
       <div class="field"><label>堂食（元）</label><input type="number" id="fDine" inputmode="decimal" placeholder="0"></div>
@@ -210,6 +211,32 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <div class="card">
     <h2>小计</h2>
     <div class="list" id="recSum"></div>
+  </div>
+</section>
+
+<!-- ===== 视图：操作日志 ===== -->
+<section id="view-log" hidden>
+  <h1 class="title">操作日志<span>什么时候进了什么、领了什么</span></h1>
+  <div class="note">每次入库、领用、盘点、保存日报，都会自动记一条。按时间倒序排列，方便回查进货和出货的时间节点。</div>
+  <div class="card">
+    <h2>全部动作</h2>
+    <div class="bar" style="margin-bottom:6px">
+      <select id="lgType" style="max-width:180px">
+        <option value="全部">全部动作</option>
+        <option value="in">只看入库</option>
+        <option value="out">只看领用出库</option>
+        <option value="check">只看盘点</option>
+        <option value="custom">只看自购原料</option>
+        <option value="daily">只看日报</option>
+      </select>
+      <span class="mini" id="lgCount"></span>
+    </div>
+    <div class="list" id="logList"></div>
+  </div>
+  <div class="card">
+    <h2>清空日志</h2>
+    <p class="hint">只清日志，库存和日报数据不受影响</p>
+    <button class="btn plain" id="btnLogClr" type="button">清空操作日志</button>
   </div>
 </section>
 
