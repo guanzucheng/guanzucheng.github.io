@@ -25,15 +25,23 @@ const MATERIALS = [
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[]};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[]};}
 let S=load();
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];if(!o.materials||!o.materials.length)o.materials=MATERIALS.map(m=>({...m}));return o;}}catch(e){}return seed();}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];if(!o.materials||!o.materials.length)o.materials=MATERIALS.map(m=>({...m}));return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
 const $=id=>document.getElementById(id);
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
 function money(n){return (Math.round(n*100)/100).toLocaleString('zh-CN',{maximumFractionDigits:2});}
 let curView='daily';
+
+/* ============ 操作日志 ============ */
+function dateOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function hhmm(ts){const d=new Date(ts);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function logAdd(type,label,detail){
+  S.logs.push({at:Date.now(),type,label,detail:detail||''});
+  if(S.logs.length>800)S.logs=S.logs.slice(-800);
+}
 
 /* ============ 物料 ============ */
 function lowLine(m){return 1;}
@@ -71,7 +79,9 @@ function submitDaily(){
   const num=v=>v===''?null:Number(v);
   const rec={date:todayStr(),revenue:rev,dine:num($('fDine').value),group:num($('fGroup').value),take:num($('fTake').value),note:$('fNote').value.trim()};
   S.records=S.records.filter(r=>r.date!==todayStr());
-  S.records.push(rec); save(); toast('已保存今天的日报'); renderRecent(); renderRecords();
+  S.records.push(rec);
+  logAdd('daily','日报 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—'));
+  save(); toast('已保存今天的日报'); renderRecent(); renderRecords(); if(curView==='log')renderLog();
 }
 
 /* ============ 库存 ============ */
@@ -97,9 +107,14 @@ function stockApply(){
   if(!q||q<=0){toast('数量不对');return;}
   const m=findItem(key); if(!m){toast('原料没找到');return;}
   const cur=m.stock==null?0:m.stock;
-  if($('sType').value==='out'&&cur-q<0){toast('库存不够，不能出这么多');return;}
-  m.stock=Math.round(($('sType').value==='in'?cur+q:cur-q)*100)/100;
-  save(); $('sQty').value=''; renderStock(); toast($('sType').value==='in'?'已入库':'已领用');
+  const isIn=$('sType').value==='in';
+  if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
+  m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
+  const by=($('sBy')&&$('sBy').value.trim())||'';
+  logAdd(isIn?'in':'out',(isIn?'入库 ':'领用 ')+q+' '+(m.unit||'')+' '+m.n,('经手人 '+(by||'—'))+' · 账面 '+m.stock+' '+(m.unit||''));
+  save(); $('sQty').value=''; if($('sBy'))$('sBy').value='';
+  renderStock(); if(curView==='log')renderLog();
+  toast(isIn?'已入库':'已领用');
 }
 
 /* ============ 自购项 ============ */
@@ -110,14 +125,20 @@ function renderCustom(){
     <div class="sub">${c.unit||''} · 账面 ${c.stock==null?'未建账':c.stock}</div></div>
     <button class="btn plain" data-del="${i}" type="button">删除</button></div>`).join('');
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
-    S.custom.splice(Number(b.dataset.del),1); save(); renderCustom(); renderStock(); toast('已删除');
+    const gone=S.custom[Number(b.dataset.del)];
+    S.custom.splice(Number(b.dataset.del),1);
+    logAdd('custom','删除自购原料 '+(gone?gone.n:'—'),'');
+    save(); renderCustom(); renderStock(); toast('已删除');
   });
 }
 function addCustom(){
   const n=$('cmName').value.trim();
   if(!n){toast('先填名称');return;}
   if(S.materials.find(m=>m.n===n)||S.custom.find(c=>c.n===n)){toast('这个已经有了');return;}
-  S.custom.push({n,unit:$('cmUnit').value.trim()||'件',stock:$('cmQty').value===''?null:Number($('cmQty').value),cat:'门店自购'});
+  const unit=$('cmUnit').value.trim()||'件';
+  const qty=$('cmQty').value===''?null:Number($('cmQty').value);
+  S.custom.push({n,unit,stock:qty,cat:'门店自购'});
+  logAdd('custom','新增自购原料 '+n,'单位 '+unit+' · 期初 '+(qty==null?'未建账':qty));
   save(); $('cmName').value='';$('cmUnit').value='';$('cmQty').value='';
   renderCustom(); renderStock(); toast('已加入清单');
 }
@@ -160,7 +181,10 @@ function updateCkTotal(){
 function saveCheck(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
-  S.checks.push({date:todayStr(),by:$('ckBy').value.trim()||'—',rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
+  const by=$('ckBy').value.trim()||'—';
+  S.checks.push({date:todayStr(),by,rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
+  const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
+  logAdd('check','月度盘点 '+filled.length+' 项','盘点人 '+by+' · 差异合计 '+Math.round(diff*100)/100);
   save(); renderCkHistory(); toast('盘点已保存');
 }
 function renderCkHistory(){
@@ -170,6 +194,32 @@ function renderCkHistory(){
     const diff=c.rows.reduce((a,r)=>a+Math.abs(r.real-r.book),0);
     return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项 · 盘点人 ${c.by}</div></div><div class="val">差异量 ${Math.round(diff*100)/100}</div></div>`;
   }).join('');
+}
+
+/* ============ 日志 ============ */
+const LOG_TAG={in:['入库','tag ok'],out:['领用','tag'],check:['盘点','tag gray'],custom:['自购','tag gray'],daily:['日报','tag gray']};
+function renderLog(){
+  const box=$('logList'); if(!box)return;
+  const f=($('lgType')&&$('lgType').value)||'全部';
+  const logs=S.logs.slice().reverse().filter(l=>f==='全部'||l.type===f);
+  if($('lgCount'))$('lgCount').textContent='共 '+logs.length+' 条';
+  if(!logs.length){box.innerHTML='<div class="mini">还没有动作记录，去库存页记一笔就会出现</div>';return;}
+  let out='',last='';
+  logs.forEach(l=>{
+    const d=dateOf(l.at);
+    if(d!==last){out+='<div class="mini" style="margin:10px 0 2px;font-weight:600;color:var(--ink-2)">'+d+'</div>';last=d;}
+    const t=LOG_TAG[l.type]||['动作','tag gray'];
+    out+='<div class="item"><div><div class="nm" style="font-weight:500">'+l.label
+      +'<span class="tag '+t[1]+'" style="margin-left:6px">'+t[0]+'</span></div>'
+      +'<div class="sub">'+(l.detail||'')+'</div></div>'
+      +'<div class="val mini">'+hhmm(l.at)+'</div></div>';
+  });
+  box.innerHTML=out;
+}
+function clearLogs(){
+  if(!S.logs.length){toast('还没有日志');return;}
+  if(!confirm('只清空操作日志，库存和日报数据不动，确定？')){return;}
+  S.logs=[]; save(); renderLog(); toast('操作日志已清空');
 }
 
 /* ============ 历史 ============ */
@@ -223,18 +273,19 @@ function resetAll(){
 /* ============ 路由 ============ */
 function show(view){
   curView=view;
-  ['daily','stock','check','record','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
+  ['daily','stock','check','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
   document.querySelectorAll('.tabs-in button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
   if(view==='daily') renderDaily();
   if(view==='stock'){renderStock();renderCustom();}
   if(view==='check') renderCheck();
   if(view==='record') renderRecords();
+  if(view==='log') renderLog();
   if(view==='setting'){ $('setShop').value=S.shopName; }
   location.hash='#/'+view;
 }
 function renderAll(){
   $('shopName').textContent=S.shopName;
-  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords();
+  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog();
 }
 
 $('btnSave').onclick=submitDaily;
@@ -248,8 +299,10 @@ $('btnExpCk').onclick=expCk;
 $('btnReset').onclick=resetAll;
 $('stCat').onchange=renderStock;
 $('ckCat').onchange=renderCheck;
+$('lgType').onchange=renderLog;
+$('btnLogClr').onclick=clearLogs;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
-window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','setting'].includes(v))show(v);});
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].includes(v))show(v);});
 $('shopName').textContent=S.shopName;
 show((location.hash||'#/daily').slice(2)||'daily');
