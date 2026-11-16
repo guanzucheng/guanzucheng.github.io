@@ -1,4 +1,4 @@
-/* 原料清单：75 项原料名称与单位（食材 65 · 包装 7 · 其它 3），不含备货量、单价、适用范围与供应归属 */
+/* 原料清单：75 项原料名称与单位（食材 65 · 包装 7 · 其它 3），不含备货量、单价、适用范围与供应归属；单价由门店在本机自己填，只存 localStorage */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -79,7 +79,14 @@ const MATERIALS = [
 
 function mergeMaterials(arr){
   const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
-  return MATERIALS.map(m=>{const o=old[m.n]; return o?{...m,stock:o.stock==null?null:o.stock}:{...m};});
+  return MATERIALS.map(m=>{
+    const o=old[m.n];
+    if(!o) return {...m};
+    const out={...m};
+    if(o.stock!=null) out.stock=o.stock;
+    if(o.price!=null) out.price=o.price;
+    return out;
+  });
 }
 
 const KEY='ysh_local_v2';
@@ -102,7 +109,7 @@ function logAdd(type,label,detail){
   if(S.logs.length>800)S.logs=S.logs.slice(-800);
 }
 
-/* ============ 物料 ============ */
+/* ============ 物料与金额 ============ */
 function itemList(){
   const out=[];
   S.materials.forEach((m,i)=>out.push({key:'M'+i,m}));
@@ -110,6 +117,12 @@ function itemList(){
   return out;
 }
 function findItem(key){return key[0]==='M'?S.materials[Number(key.slice(1))]:S.custom[Number(key.slice(1))];}
+function amtOf(m){return (m.price!=null&&m.stock!=null)?Math.round(m.stock*m.price*100)/100:null;}
+function stockTotal(){
+  let sum=0, filled=0;
+  itemList().forEach(({m})=>{const a=amtOf(m); if(a!=null){sum+=a;filled++;}});
+  return {sum:Math.round(sum*100)/100, filled};
+}
 
 /* ============ 日报 ============ */
 function renderDaily(){
@@ -151,12 +164,31 @@ function renderStock(){
   if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
     const v=m.stock==null?'—':(m.stock+' '+(m.unit||''));
+    const a=amtOf(m);
+    const amtTxt=a==null?'金额 —':('金额 '+money(a)+' 元');
     const tag=m.stock==null?'<span class="tag gray">未建账</span>':'<span class="tag ok">已建账</span>';
-    return `<div class="item"><div><div class="nm">${m.n}</div><div class="sub">${m.cat||'门店自购'}</div></div>
-      <div class="val">${v}</div>${tag}</div>`;
+    const ph='单价/'+(m.unit||'');
+    return `<div class="item"><div style="flex:1;min-width:0"><div class="nm">${m.n}</div><div class="sub">${m.cat||'门店自购'}</div></div>
+      <div class="val" style="text-align:right;min-width:90px">${v}<div class="sub" style="font-weight:400">${amtTxt}</div></div>
+      <input type="number" class="prIn" data-key="${key}" value="${m.price==null?'':m.price}" placeholder="${ph}" inputmode="decimal" style="width:80px;padding:6px 8px;text-align:right">
+      ${tag}</div>`;
   }).join('');
+  box.querySelectorAll('.prIn').forEach(inp=>{
+    inp.onchange=()=>{
+      const m=findItem(inp.dataset.key); if(!m)return;
+      const val=inp.value===''?null:Number(inp.value);
+      m.price=(val==null||isNaN(val))?null:val;
+      save(); renderStock();
+    };
+  });
   const all=itemList();
   $('sItem').innerHTML=all.map(({key,m})=>`<option value="${key}">${m.n}（${m.unit||''}）</option>`).join('');
+  renderStockTotal();
+}
+function renderStockTotal(){
+  const el=$('stVal'); if(!el)return;
+  const t=stockTotal();
+  el.textContent=t.filled?('在库金额约 '+money(t.sum)+' 元 · 已填单价 '+t.filled+' 项 · 单价只存本机'):('还没填单价：填了才会算在库金额（单价只存本机，不进网页代码）');
 }
 function stockApply(){
   const key=$('sItem').value, q=Number($('sQty').value);
@@ -167,7 +199,8 @@ function stockApply(){
   const isIn=$('sType').value==='in';
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
-  logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||''));
+  const a=amtOf(m);
+  logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||'')+(a!=null?(' · 金额 '+money(a)+' 元'):''));
   save(); $('sQty').value=''; if($('stQ').value)$('stQ').value='';
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
@@ -199,6 +232,44 @@ function addCustom(){
   renderCustom(); renderStock(); toast('已加入清单');
 }
 
+/* ============ 单价导入导出 ============ */
+function importPrices(){
+  const raw=$('prText').value;
+  if(!raw.trim()){toast('先把单价清单粘进来');return;}
+  const all=itemList();
+  let ok=0, miss=[];
+  raw.split('\n').forEach(line=>{
+    const parts=line.split(/[,，;；\u3000 ]+/).filter(x=>x.length);
+    if(parts.length<2)return;
+    const name=parts[0].trim();
+    const num=Number(parts[parts.length-1]);
+    if(!name||isNaN(num))return;
+    let hit=all.find(({m})=>m.n===name);
+    if(!hit&&name.length>=2)hit=all.find(({m})=>m.n.indexOf(name)>=0);
+    if(!hit){miss.push(name);return;}
+    hit.m.price=num; ok++;
+  });
+  save(); renderStock();
+  if($('prMsg'))$('prMsg').textContent='已写入 '+ok+' 项单价'+(miss.length?'；没匹配到 '+miss.length+' 项：'+miss.join('、'):'');
+  toast('单价已更新 '+ok+' 项');
+}
+function expPrices(){
+  const rows=itemList().filter(({m})=>m.price!=null).map(({m})=>[m.n,m.unit||'',m.price]);
+  if(!rows.length){toast('还没填单价');return;}
+  const head=['原料','单位','单价'];
+  const csv=[head,...rows].map(r=>r.map(csvEscape).join(',')).join('\n');
+  download('门店单价清单-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');
+  toast('已导出单价清单');
+}
+function expStock(){
+  const head=['原料','品类','单位','账面','单价','金额'];
+  const rows=itemList().map(({m})=>{const a=amtOf(m);return [m.n,m.cat||'门店自购',m.unit||'',m.stock==null?'':m.stock,m.price==null?'':m.price,a==null?'':a];});
+  rows.push(['合计','','','','',stockTotal().sum]);
+  const csv=[head,...rows].map(r=>r.map(csvEscape).join(',')).join('\n');
+  download('门店库存金额-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');
+  toast('已导出库存金额 CSV');
+}
+
 /* ============ 盘点 ============ */
 let ckRows=[];
 function renderCheck(){
@@ -207,21 +278,27 @@ function renderCheck(){
   $('ckTitle').textContent=`${d.getFullYear()} 年 ${d.getMonth()+1} 月盘点`;
   const cat=($('ckCat')&&$('ckCat').value)||'食材原料';
   ckRows=itemList().filter(({m})=>cat==='全部'||(m.cat||'门店自购')===cat)
-    .map(({key,m})=>({key,n:m.n,unit:m.unit||'',book:m.stock==null?null:m.stock,real:''}));
+    .map(({key,m})=>({key,n:m.n,unit:m.unit||'',book:m.stock==null?null:m.stock,price:m.price==null?null:m.price,real:''}));
   const body=$('ckBody');
   body.innerHTML=ckRows.map((r,i)=>`<tr><td>${r.n}</td><td>${r.book==null?'未建账':r.book+' '+r.unit}</td>
     <td><input type="number" data-i="${i}" class="ckIn" placeholder="实盘" style="padding:5px 8px"></td>
-    <td class="ckDiff" data-i="${i}">—</td></tr>`).join('');
+    <td class="ckDiff" data-i="${i}">—</td><td class="ckAmt" data-i="${i}">—</td></tr>`).join('');
   body.querySelectorAll('.ckIn').forEach(inp=>{
     inp.oninput=()=>{
       const i=Number(inp.dataset.i), v=inp.value===''?null:Number(inp.value);
       ckRows[i].real=v;
       const cell=body.querySelector(`.ckDiff[data-i="${i}"]`);
-      if(v==null){cell.textContent='—';cell.style.color='';}
+      const amtCell=body.querySelector(`.ckAmt[data-i="${i}"]`);
+      if(v==null){cell.textContent='—';cell.style.color='';if(amtCell)amtCell.textContent='—';}
       else{
         const d2=Math.round((v-(ckRows[i].book==null?0:ckRows[i].book))*100)/100;
         cell.textContent=(d2>0?'+':'')+d2+' '+ckRows[i].unit;
         cell.style.color=d2===0?'':'var(--warn)';
+        if(amtCell){
+          const p=ckRows[i].price;
+          if(p==null){amtCell.textContent='—';}
+          else{const m2=Math.round(d2*p*100)/100;amtCell.textContent=(m2>0?'+':'')+money(m2)+' 元';amtCell.style.color=m2===0?'':'var(--warn)';}
+        }
       }
       updateCkTotal();
     };
@@ -231,13 +308,18 @@ function renderCheck(){
 function updateCkTotal(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){$('ckDiff').textContent='已填 0 / '+ckRows.length+' 项';return;}
-  let sum=0; filled.forEach(r=>{sum+=Math.abs(r.real-(r.book==null?0:r.book));});
-  $('ckDiff').textContent=`已填 ${filled.length} / ${ckRows.length} 项 · 差异量合计 ${Math.round(sum*100)/100}`;
+  let sum=0, amt=0, amtN=0;
+  filled.forEach(r=>{
+    const d2=(r.real==null?0:r.real)-(r.book==null?0:r.book);
+    sum+=Math.abs(d2);
+    if(r.price!=null){amt+=Math.abs(d2*r.price);amtN++;}
+  });
+  $('ckDiff').textContent=`已填 ${filled.length} / ${ckRows.length} 项 · 差异量合计 ${Math.round(sum*100)/100}`+(amtN?(' · 差异金额约 '+money(Math.round(amt*100)/100)+' 元'):'');
 }
 function saveCheck(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
-  S.checks.push({date:todayStr(),rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
+  S.checks.push({date:todayStr(),rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real,price:r.price==null?null:r.price}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
   logAdd('check',filled.length+' 项已盘','差异合计 '+Math.round(diff*100)/100);
   save(); renderCkHistory(); toast('盘点已保存');
@@ -247,7 +329,8 @@ function renderCkHistory(){
   if(!S.checks.length){box.innerHTML='<div class="mini">还没有盘点记录</div>';return;}
   box.innerHTML=S.checks.slice().reverse().map(c=>{
     const diff=c.rows.reduce((a,r)=>a+Math.abs(r.real-r.book),0);
-    return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项</div></div><div class="val">差异量 ${Math.round(diff*100)/100}</div></div>`;
+    let amt=0; c.rows.forEach(r=>{if(r.price!=null)amt+=Math.abs((r.real-r.book)*r.price);});
+    return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项</div></div><div class="val" style="text-align:right">差异量 ${Math.round(diff*100)/100}<div class="sub" style="font-weight:400">${amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —'}</div></div></div>`;
   }).join('');
 }
 
@@ -310,9 +393,13 @@ function expCsv(){
 }
 function expCk(){
   if(!S.checks.length){toast('还没有盘点记录');return;}
-  const head=['盘点日期','原料','单位','账面','实盘','差异'];
+  const head=['盘点日期','原料','单位','账面','实盘','差异','差异金额'];
   const rows=[];
-  S.checks.forEach(c=>c.rows.forEach(r=>rows.push([c.date,r.n,r.unit,r.book,r.real,Math.round((r.real-r.book)*100)/100])));
+  S.checks.forEach(c=>c.rows.forEach(r=>{
+    const d2=Math.round((r.real-r.book)*100)/100;
+    const a=(r.price==null)?'':Math.round(d2*r.price*100)/100;
+    rows.push([c.date,r.n,r.unit,r.book,r.real,d2,a]);
+  }));
   const csv=[head,...rows].map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店盘点-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出盘点 CSV');
 }
@@ -353,6 +440,9 @@ $('btnShop').onclick=saveShop;
 $('btnExpJson').onclick=expJson;
 $('btnExpCsv').onclick=expCsv;
 $('btnExpCk').onclick=expCk;
+$('btnExpStock').onclick=expStock;
+$('btnImpPrice').onclick=importPrices;
+$('btnExpPrice').onclick=expPrices;
 $('btnReset').onclick=resetAll;
 $('stCat').onchange=renderStock;
 $('stQ').oninput=renderStock;
