@@ -80,7 +80,7 @@ function submitDaily(){
   const rec={date:todayStr(),revenue:rev,dine:num($('fDine').value),group:num($('fGroup').value),take:num($('fTake').value),note:$('fNote').value.trim()};
   S.records=S.records.filter(r=>r.date!==todayStr());
   S.records.push(rec);
-  logAdd('daily','日报 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—'));
+  logAdd('daily','总营业额 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—'));
   save(); toast('已保存今天的日报'); renderRecent(); renderRecords(); if(curView==='log')renderLog();
 }
 
@@ -111,7 +111,7 @@ function stockApply(){
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
   const by=($('sBy')&&$('sBy').value.trim())||'';
-  logAdd(isIn?'in':'out',(isIn?'入库 ':'领用 ')+q+' '+(m.unit||'')+' '+m.n,('经手人 '+(by||'—'))+' · 账面 '+m.stock+' '+(m.unit||''));
+  logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,('经手人 '+(by||'—'))+' · 账面 '+m.stock+' '+(m.unit||''));
   save(); $('sQty').value=''; if($('sBy'))$('sBy').value='';
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
@@ -127,7 +127,7 @@ function renderCustom(){
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
     const gone=S.custom[Number(b.dataset.del)];
     S.custom.splice(Number(b.dataset.del),1);
-    logAdd('custom','删除自购原料 '+(gone?gone.n:'—'),'');
+    logAdd('custom','删除 '+(gone?gone.n:'—'),'');
     save(); renderCustom(); renderStock(); toast('已删除');
   });
 }
@@ -138,7 +138,7 @@ function addCustom(){
   const unit=$('cmUnit').value.trim()||'件';
   const qty=$('cmQty').value===''?null:Number($('cmQty').value);
   S.custom.push({n,unit,stock:qty,cat:'门店自购'});
-  logAdd('custom','新增自购原料 '+n,'单位 '+unit+' · 期初 '+(qty==null?'未建账':qty));
+  logAdd('custom','新增 '+n,'单位 '+unit+' · 期初 '+(qty==null?'未建账':qty));
   save(); $('cmName').value='';$('cmUnit').value='';$('cmQty').value='';
   renderCustom(); renderStock(); toast('已加入清单');
 }
@@ -184,7 +184,7 @@ function saveCheck(){
   const by=$('ckBy').value.trim()||'—';
   S.checks.push({date:todayStr(),by,rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
-  logAdd('check','月度盘点 '+filled.length+' 项','盘点人 '+by+' · 差异合计 '+Math.round(diff*100)/100);
+  logAdd('check',filled.length+' 项已盘','盘点人 '+by+' · 差异合计 '+Math.round(diff*100)/100);
   save(); renderCkHistory(); toast('盘点已保存');
 }
 function renderCkHistory(){
