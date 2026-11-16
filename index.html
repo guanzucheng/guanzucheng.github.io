@@ -26,6 +26,8 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(250,248,245,.95);bac
 .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.5px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
 .shop{margin-left:auto;font-size:13px;color:var(--ink-2)}
+.who{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+.who select{width:auto;min-width:92px;padding:5px 26px 5px 8px;font-size:13px;border-radius:7px}
 select,input[type=text],input[type=number],textarea{
   font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;
 }
@@ -75,6 +77,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <div class="top-in">
     <div class="brand"><span class="dot"></span>豫膳煌 · 门店小账本</div>
     <span class="shop" id="shopName">我的门店</span>
+    <span class="who">操作人 <select id="whoSel"></select></span>
   </div>
   <nav class="tabs"><div class="tabs-in">
     <button data-view="daily" class="on">今日日报</button>
@@ -119,7 +122,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：库存 ===== -->
 <section id="view-stock" hidden>
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
-  <div class="note">预置 21 项常用原料（食材 11 · 包装 7 · 其它 3）。首次是“未建账”，入库后开始算；你店里其它原料，自己在下面“门店自购”里加。</div>
+  <div class="note">预置 21 项常用原料（食材 11 · 包装 7 · 其它 3）。首次是“未建账”，入库后开始算；你店里其它原料，自己在下面“门店自购”里加。几个人一起管进货时，先在顶部点自己的名字，记的每一笔都会落到本人名下。</div>
   <div class="card">
     <h2>库存账</h2>
     <p class="hint">按品类筛选；入库后显示实时账面</p>
@@ -140,7 +143,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     </div>
     <div class="row two" style="margin-top:10px">
       <div class="field"><label>类型</label><select id="sType"><option value="in">入库</option><option value="out">领用出库</option></select></div>
-      <div class="field"><label>经手人</label><input type="text" id="sBy" placeholder="姓名"></div>
+      <div class="field"><label>经手人</label><input type="text" id="sBy" placeholder="默认取顶部当前操作人"></div>
     </div>
     <div style="margin-top:12px"><button class="btn ghost" id="btnStock" type="button">记一笔</button></div>
   </div>
@@ -165,7 +168,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <p class="hint">填实盘数，系统自动算差异；保存后可在历史记录里回看</p>
     <div class="row two">
       <div class="field"><label>盘点日期</label><input type="text" id="ckDate" readonly></div>
-      <div class="field"><label>盘点人</label><input type="text" id="ckBy" placeholder="姓名"></div>
+      <div class="field"><label>盘点人</label><input type="text" id="ckBy" placeholder="默认取顶部当前操作人"></div>
     </div>
     <div class="row two" style="margin-top:10px">
       <div class="field">
@@ -242,7 +245,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <!-- ===== 视图：设置 ===== -->
 <section id="view-setting" hidden>
-  <h1 class="title">设置<span>门店名、数据备份、清空</span></h1>
+  <h1 class="title">设置<span>门店名、操作人、数据备份</span></h1>
   <div class="card">
     <h2>门店名称</h2>
     <p class="hint">显示在页面顶部，只影响本机显示</p>
@@ -250,6 +253,15 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <div class="field"><label>门店名</label><input type="text" id="setShop" placeholder="例如 郑州二七万达店"></div>
     </div>
     <div style="margin-top:12px"><button class="btn ghost" id="btnShop" type="button">保存门店名</button></div>
+  </div>
+  <div class="card">
+    <h2>操作人</h2>
+    <p class="hint">几个人共管进货时，先在这里建好名字；顶部切换后，每一笔动作自动记到这个人</p>
+    <div class="row two">
+      <div class="field"><label>新增操作人</label><input type="text" id="opName" placeholder="例如 张三"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn ghost" id="btnAddOp" type="button">添加</button></div>
+    <div class="list" id="opList" style="margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>数据备份</h2>
