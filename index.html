@@ -122,17 +122,20 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：库存 ===== -->
 <section id="view-stock" hidden>
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
-  <div class="note">预置 21 项常用原料（食材 11 · 包装 7 · 其它 3）。首次是“未建账”，入库后开始算；你店里其它原料，自己在下面“门店自购”里加。几个人一起管进货时，先在顶部点自己的名字，记的每一笔都会落到本人名下。</div>
+  <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；报货表里没列、店里临时采买的货，在下面“门店自购”里自己加。几个人一起管进货时，先在顶部点自己的名字，记的每一笔都会落到本人名下。</div>
   <div class="card">
     <h2>库存账</h2>
-    <p class="hint">按品类筛选；入库后显示实时账面</p>
-    <select id="stCat" style="max-width:180px;margin-bottom:10px">
-      <option value="全部">全部品类</option>
-      <option value="食材原料">食材原料</option>
-      <option value="包装物料">包装物料</option>
-      <option value="其它">其它</option>
-      <option value="门店自购">门店自购</option>
-    </select>
+    <p class="hint">按品类筛选、按名字搜；入库后显示实时账面</p>
+    <div class="row two" style="margin-bottom:10px">
+      <input type="text" id="stQ" placeholder="搜原料名，例如 木耳">
+      <select id="stCat">
+        <option value="全部">全部品类</option>
+        <option value="食材原料">食材原料</option>
+        <option value="包装物料">包装物料</option>
+        <option value="其它">其它</option>
+        <option value="门店自购">门店自购</option>
+      </select>
+    </div>
     <div class="list" id="stockList"></div>
   </div>
   <div class="card">
@@ -174,11 +177,11 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <div class="field">
         <label>先盘哪一类</label>
         <select id="ckCat">
-          <option value="食材原料">食材原料（11 项）</option>
+          <option value="食材原料">食材原料（65 项）</option>
           <option value="包装物料">包装物料（7 项）</option>
           <option value="其它">其它（3 项）</option>
           <option value="门店自购">门店自购</option>
-          <option value="全部">全部</option>
+          <option value="全部">全部（75 项 + 自购）</option>
         </select>
       </div>
     </div>
