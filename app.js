@@ -1,4 +1,4 @@
-/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3）；食材原料统一按「斤」为单位，包装与工装类按个/套/张/件/顶 */
+/* 原料清单：76 项（食材 65 · 包装 8 · 其它 3）；食材统一按「斤」，包装按个/条/张/捆，工装按件/顶 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -67,11 +67,12 @@ const MATERIALS = [
   {n:'盐',unit:'斤',cat:'食材原料',stock:null},
   {n:'胡辣汤碗',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤勺',unit:'个',cat:'包装物料',stock:null},
-  {n:'胡辣汤打包',unit:'套',cat:'包装物料',stock:null},
-  {n:'外卖纸杯',unit:'套',cat:'包装物料',stock:null},
+  {n:'胡辣汤打包纸碗',unit:'个',cat:'包装物料',stock:null},
+  {n:'外卖纸杯',unit:'条',cat:'包装物料',stock:null},
   {n:'托盘',unit:'个',cat:'包装物料',stock:null},
   {n:'垫纸',unit:'张',cat:'包装物料',stock:null},
-  {n:'塑料袋',unit:'个',cat:'包装物料',stock:null},
+  {n:'大打包袋',unit:'捆',cat:'包装物料',stock:null},
+  {n:'小打包袋',unit:'捆',cat:'包装物料',stock:null},
   {n:'围裙',unit:'件',cat:'其它',stock:null},
   {n:'冬季工装',unit:'件',cat:'其它',stock:null},
   {n:'帽子',unit:'顶',cat:'其它',stock:null},
@@ -103,14 +104,14 @@ function mergeMaterials(arr){
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], unitFix:'jin1'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], mig:'u2'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];
   const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
   o.materials=mergeMaterials(o.materials);
-  /* 单位统一为斤后，旧单位下的数量和单价不再成立，一次性清成未建账，避免旧数字被误读 */
-  if(o.unitFix!=='jin1'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.unitFix='jin1';saveRaw(o);}
+  /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
+  if(o.mig!=='u2'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u2';saveRaw(o);}
   return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
