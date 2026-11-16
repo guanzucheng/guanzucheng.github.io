@@ -25,9 +25,9 @@ const MATERIALS = [
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[]};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[], operators:['店长','店员一','店员二'], currentBy:'店长'};}
 let S=load();
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];if(!o.materials||!o.materials.length)o.materials=MATERIALS.map(m=>({...m}));return o;}}catch(e){}return seed();}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.operators=(o.operators&&o.operators.length)?o.operators:['店长','店员一','店员二'];if(!o.currentBy||o.operators.indexOf(o.currentBy)<0)o.currentBy=o.operators[0]||'';if(!o.materials||!o.materials.length)o.materials=MATERIALS.map(m=>({...m}));return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
 const $=id=>document.getElementById(id);
@@ -52,6 +52,44 @@ function itemList(){
   return out;
 }
 function findItem(key){return key[0]==='M'?S.materials[Number(key.slice(1))]:S.custom[Number(key.slice(1))];}
+
+/* ============ 操作人 ============ */
+function renderWho(){
+  const sel=$('whoSel'); if(!sel)return;
+  const ops=S.operators||[];
+  sel.innerHTML=ops.length?ops.map(n=>`<option value="${n}">${n}</option>`).join(''):'<option value="">未设置</option>';
+  sel.value=S.currentBy||(ops[0]||'');
+  if($('sBy')&&!$('sBy').value)$('sBy').value=S.currentBy||'';
+  if($('ckBy')&&!$('ckBy').value)$('ckBy').value=S.currentBy||'';
+}
+function setWho(){
+  S.currentBy=($('whoSel')&&$('whoSel').value)||'';
+  save();
+  if($('sBy'))$('sBy').value=S.currentBy;
+  if($('ckBy'))$('ckBy').value=S.currentBy;
+  toast('当前操作人：'+(S.currentBy||'未设置'));
+}
+function renderOps(){
+  const box=$('opList'); if(!box)return;
+  if(!S.operators||!S.operators.length){box.innerHTML='<div class="mini">还没有操作人</div>';return;}
+  box.innerHTML=S.operators.map((n,i)=>`<div class="item"><div class="nm">${n}${n===S.currentBy?' <span class="tag ok">当前</span>':''}</div>
+    <button class="btn plain" data-op="${i}" type="button">删除</button></div>`).join('');
+  box.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{
+    const i=Number(b.dataset.op), gone=S.operators[i];
+    if(S.operators.length<=1){toast('至少留一个操作人');return;}
+    S.operators.splice(i,1);
+    if(S.currentBy===gone)S.currentBy=S.operators[0]||'';
+    save(); renderWho(); renderOps(); toast('已删除 '+gone);
+  });
+}
+function addOp(){
+  const n=$('opName').value.trim();
+  if(!n){toast('先填名字');return;}
+  if(S.operators.indexOf(n)>=0){toast('已有这个人');return;}
+  S.operators.push(n);
+  if(!S.currentBy)S.currentBy=n;
+  save(); $('opName').value=''; renderWho(); renderOps(); toast('已添加 '+n);
+}
 
 /* ============ 日报 ============ */
 function renderDaily(){
@@ -80,7 +118,7 @@ function submitDaily(){
   const rec={date:todayStr(),revenue:rev,dine:num($('fDine').value),group:num($('fGroup').value),take:num($('fTake').value),note:$('fNote').value.trim()};
   S.records=S.records.filter(r=>r.date!==todayStr());
   S.records.push(rec);
-  logAdd('daily','总营业额 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—'));
+  logAdd('daily','总营业额 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—')+' · 操作人 '+(S.currentBy||'—'));
   save(); toast('已保存今天的日报'); renderRecent(); renderRecords(); if(curView==='log')renderLog();
 }
 
@@ -110,9 +148,9 @@ function stockApply(){
   const isIn=$('sType').value==='in';
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
-  const by=($('sBy')&&$('sBy').value.trim())||'';
+  const by=($('sBy')&&$('sBy').value.trim())||S.currentBy||'';
   logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,('经手人 '+(by||'—'))+' · 账面 '+m.stock+' '+(m.unit||''));
-  save(); $('sQty').value=''; if($('sBy'))$('sBy').value='';
+  save(); $('sQty').value=''; if($('sBy'))$('sBy').value=S.currentBy||'';
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
 }
@@ -181,7 +219,7 @@ function updateCkTotal(){
 function saveCheck(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
-  const by=$('ckBy').value.trim()||'—';
+  const by=$('ckBy').value.trim()||S.currentBy||'—';
   S.checks.push({date:todayStr(),by,rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
   logAdd('check',filled.length+' 项已盘','盘点人 '+by+' · 差异合计 '+Math.round(diff*100)/100);
@@ -280,11 +318,11 @@ function show(view){
   if(view==='check') renderCheck();
   if(view==='record') renderRecords();
   if(view==='log') renderLog();
-  if(view==='setting'){ $('setShop').value=S.shopName; }
+  if(view==='setting'){ $('setShop').value=S.shopName; renderOps(); }
   location.hash='#/'+view;
 }
 function renderAll(){
-  $('shopName').textContent=S.shopName;
+  $('shopName').textContent=S.shopName; renderWho();
   renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog();
 }
 
@@ -301,8 +339,11 @@ $('stCat').onchange=renderStock;
 $('ckCat').onchange=renderCheck;
 $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
+$('whoSel').onchange=setWho;
+$('btnAddOp').onclick=addOp;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
 window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].includes(v))show(v);});
 $('shopName').textContent=S.shopName;
+renderWho();
 show((location.hash||'#/daily').slice(2)||'daily');
