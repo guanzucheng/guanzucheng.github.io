@@ -1,4 +1,4 @@
-/* 原料清单：75 项原料名称与单位（食材 65 · 包装 7 · 其它 3），不含备货量、单价、适用范围与供应归属；单价由门店在本机自己填，只存 localStorage */
+/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3），单价为总部成本核算参考价（元/成立单位），门店可在库存页自行修改，改动只存本机 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -77,12 +77,24 @@ const MATERIALS = [
   {n:'帽子',unit:'顶',cat:'其它',stock:null},
 ];
 
+/* 总部成本核算参考单价（元/对应单位），门店可改；未列项为未定价，门店自己填 */
+const REF_PRICES={
+  '胡辣汤料':43,'面筋':3,'木耳':32,'虫草花':28,'秘制料油':15,'去皮鲜山药':6.8,
+  '小麦淀粉':1.9,'基豆':6,'花江豆':6.4,'赤小豆':4,'云豆':7,'高粱米':2.12,'麦仁':1.74,
+  '大枣（无核）':8,'江米':3.4,'莲子':28,'花生':5.2,'红曲米':7,'小米':3.8,'南瓜':1.5,
+  '青菜':2,'熟白芝麻':10,'豆沫料':35,'豆沫专用粉条':3.3,'小米面':3,'粉条':3.3,
+  '包子料':35,'牛肉馅':30,'牛油':6,'葱':2,'姜':5,'鸡蛋':3.5,'碱面':1.8,'胡萝卜':1.5,
+  '豆腐':2.2,'茄子':3.5,'香菇':6,'青辣椒':5,'包子专用粉条':3.3,'小香葱':5,'糯米粉':2.64,
+  '白糖':3.48,'味精':4.1,'纯正香油':18
+};
+function defaultPrice(n){return (REF_PRICES[n]==null?null:REF_PRICES[n]);}
+
 function mergeMaterials(arr){
   const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
   return MATERIALS.map(m=>{
     const o=old[m.n];
-    if(!o) return {...m};
-    const out={...m};
+    const out={...m,price:defaultPrice(m.n)};
+    if(!o) return out;
     if(o.stock!=null) out.stock=o.stock;
     if(o.price!=null) out.price=o.price;
     return out;
@@ -91,7 +103,7 @@ function mergeMaterials(arr){
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[]};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[]};}
 let S=load();
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.materials=mergeMaterials(o.materials);return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
@@ -188,7 +200,7 @@ function renderStock(){
 function renderStockTotal(){
   const el=$('stVal'); if(!el)return;
   const t=stockTotal();
-  el.textContent=t.filled?('在库金额约 '+money(t.sum)+' 元 · 已填单价 '+t.filled+' 项 · 单价只存本机'):('还没填单价：填了才会算在库金额（单价只存本机，不进网页代码）');
+  el.textContent=t.filled?('在库金额约 '+money(t.sum)+' 元 · 已建账并算金额 '+t.filled+' 项 · 单价可自己改'):('还没入库：入库后自动按单价算金额（单价可自己改）');
 }
 function stockApply(){
   const key=$('sItem').value, q=Number($('sQty').value);
