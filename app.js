@@ -186,13 +186,14 @@ function updProdMsg(){
   const rate=lossRate(r);
   el.textContent='用料 '+(r.used!=null?r.used+' 斤':'—')+' · 产出 '+(r.made!=null?r.made+' 碗':'—')+' · 剩余 '+(r.left!=null?r.left+' 斤':'—')+(r.leftCost!=null?('（'+money(r.leftCost)+' 元）'):'')+' · 损耗 '+(r.loss!=null?r.loss+' 斤':'—')+(rate!=null?('，损耗率 '+rate+'%'):'');
 }
+/* 摆在“今日总结 + 保存”下面、最近 7 天上面，手机上一屏内看得到 */
 function buildProdUI(){
   const vd=$('view-daily');
   if(!vd||$('prodCard'))return;
   const lab1=document.createElement('div');lab1.style.cssText=BLOCK_STYLE;lab1.textContent='① 日报流水';
   vd.insertBefore(lab1,vd.children[1]);
-  const lab2=document.createElement('div');lab2.style.cssText=BLOCK_STYLE;lab2.textContent='② 原料生产与损耗';
-  vd.appendChild(lab2);
+  const lab2=document.createElement('div');lab2.id='prodLab';lab2.style.cssText=BLOCK_STYLE+'display:flex;justify-content:space-between;align-items:center;gap:8px';
+  lab2.innerHTML='<span>② 原料生产与损耗</span><span id="prodFlag" style="font-weight:400;letter-spacing:0"></span>';
   const card=document.createElement('div');card.id='prodCard';card.className='card';
   const f3=PROD_F.slice(0,3).map(f=>'<div class="field"><label>'+f.n+'（'+f.u+'）</label><input type="number" id="pd_'+f.k+'" inputmode="decimal" placeholder="0"></div>').join('');
   const f2=PROD_F.slice(3).map(f=>'<div class="field"><label>'+f.n+'（'+f.u+'）</label><input type="number" id="pd_'+f.k+'" inputmode="decimal" placeholder="0"></div>').join('');
@@ -201,7 +202,9 @@ function buildProdUI(){
     +'<div class="row two" style="margin-top:10px">'+f2+'</div>'
     +'<div style="margin-top:12px"><button class="btn ghost" id="btnProd" type="button">保存今天的生产与损耗</button></div>'
     +'<p class="mini" id="prodMsg" style="margin-top:10px"></p>';
-  vd.appendChild(card);
+  const recent=$('recentList')?$('recentList').closest('.card'):null;
+  if(recent){vd.insertBefore(card,recent);vd.insertBefore(lab2,card);}
+  else{vd.appendChild(lab2);vd.appendChild(card);}
   $('btnProd').onclick=saveProd;
   PROD_F.forEach(f=>{const el=$('pd_'+f.k); if(el)el.oninput=updProdMsg;});
 }
@@ -220,6 +223,8 @@ function renderProd(){
   const r=prodRow(todayStr());
   PROD_F.forEach(f=>{const el=$('pd_'+f.k); if(el)el.value=(r&&r[f.k]!=null)?r[f.k]:'';});
   updProdMsg();
+  const flag=$('prodFlag');
+  if(flag){flag.textContent=r?'今天已记录':'今天还没填';flag.style.color=r?'var(--ink-3)':'var(--warn)';}
   const box=$('prodList'); if(!box)return;
   const rows=(S.prod||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
   box.innerHTML=rows.length?rows.map(x=>{
