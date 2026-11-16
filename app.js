@@ -1,4 +1,4 @@
-/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3），单价为总部成本核算参考价（元/成立单位），门店可在库存页自行修改，改动只存本机 */
+/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3），单价为总部成本核算参考价（元/对应单位），门店可在库存页自行修改，改动只存本机 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -168,6 +168,17 @@ function submitDaily(){
 }
 
 /* ============ 库存 ============ */
+/* 剩余库存总金额汇总块固定放在库存账卡片最下方（页面里它可能在卡片顶部） */
+function sumEl(){
+  let el=$('stVal');
+  if(!el){el=document.createElement('div');el.id='stVal';}
+  const card=$('stockList')?$('stockList').closest('.card'):null;
+  if(card&&el.parentNode!==card)card.appendChild(el);
+  el.style.marginTop='12px';
+  el.style.paddingTop='10px';
+  el.style.borderTop='1px solid var(--line)';
+  return el;
+}
 function renderStock(){
   const cat=($('stCat')&&$('stCat').value)||'全部';
   const q=(($('stQ')&&$('stQ').value)||'').trim();
@@ -175,15 +186,26 @@ function renderStock(){
   const box=$('stockList');
   if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
-    const v=m.stock==null?'—':(m.stock+' '+(m.unit||''));
+    const unit=m.unit||'';
+    const stockTxt=m.stock==null?'—':(m.stock+' '+unit);
     const a=amtOf(m);
     const amtTxt=a==null?'金额 —':('金额 '+money(a)+' 元');
-    const tag=m.stock==null?'<span class="tag gray">未建账</span>':'<span class="tag ok">已建账</span>';
-    const ph='单价/'+(m.unit||'');
-    return `<div class="item"><div style="flex:1;min-width:0"><div class="nm">${m.n}</div><div class="sub">${m.cat||'门店自购'}</div></div>
-      <div class="val" style="text-align:right;min-width:90px">${v}<div class="sub" style="font-weight:400">${amtTxt}</div></div>
-      <input type="number" class="prIn" data-key="${key}" value="${m.price==null?'':m.price}" placeholder="${ph}" inputmode="decimal" style="width:80px;padding:6px 8px;text-align:right">
-      ${tag}</div>`;
+    const tag=m.stock==null?'未建账':'已建账';
+    return `<div class="item">
+      <div style="flex:1;min-width:0">
+        <div class="nm">${m.n}</div>
+        <div class="sub">${m.cat||'门店自购'} · ${tag}</div>
+        <div class="sub" style="margin-top:3px;color:var(--ink-2);font-variant-numeric:tabular-nums">${amtTxt}</div>
+      </div>
+      <div style="text-align:right;min-width:122px">
+        <div style="display:inline-block;min-width:74px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:600;font-variant-numeric:tabular-nums;text-align:center">${stockTxt}</div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)">
+          <span>单价</span>
+          <input type="number" class="prIn" data-key="${key}" value="${m.price==null?'':m.price}" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center">
+          <span>元/${unit}</span>
+        </div>
+      </div>
+    </div>`;
   }).join('');
   box.querySelectorAll('.prIn').forEach(inp=>{
     inp.onchange=()=>{
@@ -198,9 +220,11 @@ function renderStock(){
   renderStockTotal();
 }
 function renderStockTotal(){
-  const el=$('stVal'); if(!el)return;
+  const el=sumEl(); if(!el)return;
   const t=stockTotal();
-  el.textContent=t.filled?('在库金额约 '+money(t.sum)+' 元 · 已建账并算金额 '+t.filled+' 项 · 单价可自己改'):('还没入库：入库后自动按单价算金额（单价可自己改）');
+  const total=itemList().length;
+  const main=t.filled?('剩余库存总金额 <b style="color:var(--accent);font-size:19px;font-weight:700">'+money(t.sum)+' 元</b>'):('剩余库存总金额 <b style="color:var(--ink-3);font-size:17px">待入库</b>');
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><span>${main}</span></div><div class="mini" style="margin-top:5px">已填单价 ${t.filled} / ${total} 项 · 单价可按当地进价随时改，改完金额自动重算</div>`;
 }
 function stockApply(){
   const key=$('sItem').value, q=Number($('sQty').value);
