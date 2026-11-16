@@ -1,4 +1,4 @@
-/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3） */
+/* 原料清单：75 项（食材 65 · 包装 7 · 其它 3）；食材原料统一按「斤」为单位，包装与工装类按个/套/张/件/顶 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -10,7 +10,7 @@ const MATERIALS = [
   {n:'鲜牛肉',unit:'斤',cat:'食材原料',stock:null},
   {n:'小麦淀粉',unit:'斤',cat:'食材原料',stock:null},
   {n:'玉米淀粉',unit:'斤',cat:'食材原料',stock:null},
-  {n:'太太乐鸡精',unit:'箱',cat:'食材原料',stock:null},
+  {n:'太太乐鸡精',unit:'斤',cat:'食材原料',stock:null},
   {n:'基豆',unit:'斤',cat:'食材原料',stock:null},
   {n:'花江豆',unit:'斤',cat:'食材原料',stock:null},
   {n:'赤小豆',unit:'斤',cat:'食材原料',stock:null},
@@ -24,9 +24,9 @@ const MATERIALS = [
   {n:'红曲米',unit:'斤',cat:'食材原料',stock:null},
   {n:'小米',unit:'斤',cat:'食材原料',stock:null},
   {n:'南瓜',unit:'斤',cat:'食材原料',stock:null},
-  {n:'黄豆',unit:'袋',cat:'食材原料',stock:null},
-  {n:'消泡剂',unit:'袋',cat:'食材原料',stock:null},
-  {n:'豆腐王',unit:'袋',cat:'食材原料',stock:null},
+  {n:'黄豆',unit:'斤',cat:'食材原料',stock:null},
+  {n:'消泡剂',unit:'斤',cat:'食材原料',stock:null},
+  {n:'豆腐王',unit:'斤',cat:'食材原料',stock:null},
   {n:'青菜',unit:'斤',cat:'食材原料',stock:null},
   {n:'自己炸豆腐皮',unit:'斤',cat:'食材原料',stock:null},
   {n:'熟白芝麻',unit:'斤',cat:'食材原料',stock:null},
@@ -36,14 +36,14 @@ const MATERIALS = [
   {n:'粉条',unit:'斤',cat:'食材原料',stock:null},
   {n:'辣椒面',unit:'斤',cat:'食材原料',stock:null},
   {n:'包子料',unit:'斤',cat:'食材原料',stock:null},
-  {n:'雪菜',unit:'箱',cat:'食材原料',stock:null},
+  {n:'雪菜',unit:'斤',cat:'食材原料',stock:null},
   {n:'大蒜',unit:'斤',cat:'食材原料',stock:null},
   {n:'牛肉馅',unit:'斤',cat:'食材原料',stock:null},
   {n:'牛油',unit:'斤',cat:'食材原料',stock:null},
   {n:'羊油',unit:'斤',cat:'食材原料',stock:null},
   {n:'葱',unit:'斤',cat:'食材原料',stock:null},
   {n:'姜',unit:'斤',cat:'食材原料',stock:null},
-  {n:'老抽',unit:'升',cat:'食材原料',stock:null},
+  {n:'老抽',unit:'斤',cat:'食材原料',stock:null},
   {n:'鸡蛋',unit:'斤',cat:'食材原料',stock:null},
   {n:'碱面',unit:'斤',cat:'食材原料',stock:null},
   {n:'胡萝卜',unit:'斤',cat:'食材原料',stock:null},
@@ -51,20 +51,20 @@ const MATERIALS = [
   {n:'茄子',unit:'斤',cat:'食材原料',stock:null},
   {n:'香菇',unit:'斤',cat:'食材原料',stock:null},
   {n:'青辣椒',unit:'斤',cat:'食材原料',stock:null},
-  {n:'包子面',unit:'袋',cat:'食材原料',stock:null},
+  {n:'包子面',unit:'斤',cat:'食材原料',stock:null},
   {n:'包子专用粉条',unit:'斤',cat:'食材原料',stock:null},
-  {n:'麻辣鲜',unit:'箱',cat:'食材原料',stock:null},
-  {n:'油条面',unit:'袋',cat:'食材原料',stock:null},
+  {n:'麻辣鲜',unit:'斤',cat:'食材原料',stock:null},
+  {n:'油条面',unit:'斤',cat:'食材原料',stock:null},
   {n:'小香葱',unit:'斤',cat:'食材原料',stock:null},
   {n:'糯米粉',unit:'斤',cat:'食材原料',stock:null},
   {n:'白糖',unit:'斤',cat:'食材原料',stock:null},
   {n:'味精',unit:'斤',cat:'食材原料',stock:null},
-  {n:'酵母（梅山牌）',unit:'箱',cat:'食材原料',stock:null},
-  {n:'无铝泡打粉（梅山牌）',unit:'箱',cat:'食材原料',stock:null},
-  {n:'大豆混合油',unit:'桶',cat:'食材原料',stock:null},
-  {n:'菜籽油',unit:'桶',cat:'食材原料',stock:null},
+  {n:'酵母（梅山牌）',unit:'斤',cat:'食材原料',stock:null},
+  {n:'无铝泡打粉（梅山牌）',unit:'斤',cat:'食材原料',stock:null},
+  {n:'大豆混合油',unit:'斤',cat:'食材原料',stock:null},
+  {n:'菜籽油',unit:'斤',cat:'食材原料',stock:null},
   {n:'纯正香油',unit:'斤',cat:'食材原料',stock:null},
-  {n:'盐',unit:'箱',cat:'食材原料',stock:null},
+  {n:'盐',unit:'斤',cat:'食材原料',stock:null},
   {n:'胡辣汤碗',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤勺',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤打包',unit:'套',cat:'包装物料',stock:null},
@@ -103,9 +103,15 @@ function mergeMaterials(arr){
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[]};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], unitFix:'jin1'};}
 let S=load();
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.materials=mergeMaterials(o.materials);return o;}}catch(e){}return seed();}
+function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];
+  const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
+  o.materials=mergeMaterials(o.materials);
+  /* 单位统一为斤后，旧单位下的数量和单价不再成立，一次性清成未建账，避免旧数字被误读 */
+  if(o.unitFix!=='jin1'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.unitFix='jin1';saveRaw(o);}
+  return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
 const $=id=>document.getElementById(id);
@@ -260,7 +266,7 @@ function addCustom(){
   const n=$('cmName').value.trim();
   if(!n){toast('先填名称');return;}
   if(S.materials.find(m=>m.n===n)||S.custom.find(c=>c.n===n)){toast('这个已经有了');return;}
-  const unit=$('cmUnit').value.trim()||'件';
+  const unit=$('cmUnit').value.trim()||'斤';
   const qty=$('cmQty').value===''?null:Number($('cmQty').value);
   S.custom.push({n,unit,stock:qty,cat:'门店自购'});
   logAdd('custom','新增 '+n,'单位 '+unit+' · 期初 '+(qty==null?'未建账':qty));
