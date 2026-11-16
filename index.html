@@ -119,7 +119,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：库存 ===== -->
 <section id="view-stock" hidden>
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
-  <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；报货表里没列、店里临时采买的货，在下面“门店自购”里自己加。</div>
+  <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；在库存账里填一次单价，就能看到每种原料还剩多少钱。单价只存本机，不写进网页代码。</div>
   <div class="card">
     <h2>记一笔</h2>
     <div class="row two">
@@ -133,7 +133,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
   <div class="card">
     <h2>库存账</h2>
-    <p class="hint">按品类筛选、按名字搜；入库后显示实时账面</p>
+    <p class="hint">按品类筛选、按名字搜；右边填单价（默认按该原料的单位），就会自动算在库金额</p>
+    <div class="mini" id="stVal" style="margin:-4px 0 10px"></div>
     <div class="row two" style="margin-bottom:10px">
       <input type="text" id="stQ" placeholder="搜原料名，例如 木耳">
       <select id="stCat">
@@ -164,7 +165,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <h1 class="title">月度盘点<span>账实对不对，一眼看见</span></h1>
   <div class="card">
     <h2 id="ckTitle">本月盘点</h2>
-    <p class="hint">填实盘数，系统自动算差异；保存后可在历史记录里回看</p>
+    <p class="hint">填实盘数，系统自动算差异；填过单价的原料还会同时算出差异金额</p>
     <div class="row">
       <div class="field"><label>盘点日期</label><input type="text" id="ckDate" readonly></div>
     </div>
@@ -182,8 +183,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     </div>
     <div style="overflow-x:auto;margin-top:12px">
       <table>
-        <colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
-        <thead><tr><th>原料</th><th>账面</th><th>实盘</th><th>差异</th></tr></thead>
+        <colgroup><col style="width:30%"><col style="width:14%"><col style="width:17%"><col style="width:17%"><col style="width:22%"></colgroup>
+        <thead><tr><th>原料</th><th>账面</th><th>实盘</th><th>差异</th><th>差异额（元）</th></tr></thead>
         <tbody id="ckBody"></tbody>
       </table>
     </div>
@@ -243,7 +244,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <!-- ===== 视图：设置 ===== -->
 <section id="view-setting" hidden>
-  <h1 class="title">设置<span>门店名、数据备份</span></h1>
+  <h1 class="title">设置<span>门店名、单价、数据备份</span></h1>
   <div class="card">
     <h2>门店名称</h2>
     <p class="hint">显示在页面顶部，只影响本机显示</p>
@@ -253,12 +254,26 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div style="margin-top:12px"><button class="btn ghost" id="btnShop" type="button">保存门店名</button></div>
   </div>
   <div class="card">
+    <h2>单价与在库金额</h2>
+    <p class="hint">单价只存在这台设备里，不进网页源码、不上传；填了单价，库存页就会显示每种原料还剩多少钱</p>
+    <div class="field">
+      <label>批量填单价（一行一项：原料名 单价）</label>
+      <textarea id="prText" placeholder="木耳 32&#10;胡辣汤料 43&#10;粉条 3.3"></textarea>
+    </div>
+    <div class="bar" style="margin-top:10px">
+      <button class="btn plain" id="btnImpPrice" type="button">导入单价</button>
+      <button class="btn plain" id="btnExpPrice" type="button">导出单价清单（CSV）</button>
+    </div>
+    <p class="mini" id="prMsg" style="margin-top:8px"></p>
+d  </div>
+  <div class="card">
     <h2>数据备份</h2>
     <p class="hint">数据只在这台设备里，换手机或清缓存就没了，建议每周导一次</p>
     <div class="bar">
       <button class="btn plain" id="btnExpJson" type="button">导出全部数据（JSON）</button>
       <button class="btn plain" id="btnExpCsv" type="button">导出日报（CSV / Excel 可开）</button>
       <button class="btn plain" id="btnExpCk" type="button">导出盘点（CSV）</button>
+      <button class="btn plain" id="btnExpStock" type="button">导出库存金额（CSV）</button>
     </div>
   </div>
   <div class="card">
