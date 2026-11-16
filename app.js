@@ -104,10 +104,10 @@ function mergeMaterials(arr){
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], mig:'u2'};}
+function seed(){return {shopName:'我的门店', records:[], prod:[], materials:MATERIALS.map(m=>({...m,price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], mig:'u2'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.prod=o.prod||[];
   const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
   o.materials=mergeMaterials(o.materials);
   /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
@@ -156,6 +156,98 @@ function syncCopy(){
     sel.options[2].text='其它（'+ot+' 项）';
     sel.options[4].text='全部（'+n+' 项 + 自购）';
   }
+  const lg=$('lgType');
+  if(lg&&!lg.querySelector('option[value="prod"]')){
+    const o=document.createElement('option');o.value='prod';o.text='只看生产与损耗';lg.appendChild(o);
+  }
+}
+
+/* ============ 原料生产与损耗 ============ */
+const PROD_F=[
+  {k:'used',n:'生产用料',u:'斤'},
+  {k:'made',n:'产出成品',u:'碗'},
+  {k:'left',n:'收工剩余原料',u:'斤'},
+  {k:'leftCost',n:'剩余原料成本',u:'元'},
+  {k:'loss',n:'损耗',u:'斤'}
+];
+const BLOCK_STYLE='font-size:13px;font-weight:600;color:var(--interactive-normal,var(--ink-2));margin:18px 0 -4px;letter-spacing:.5px';
+function pnum(id){const el=$(id);if(!el)return null;return el.value===''?null:Number(el.value);}
+function prodRow(d){return (S.prod||[]).find(r=>r.date===d);}
+function lossRate(r){
+  if(!r||r.used==null||!r.used||r.loss==null)return null;
+  return Math.round(r.loss/r.used*1000)/10;
+}
+function updProdMsg(){
+  const el=$('prodMsg'); if(!el)return;
+  const r={used:pnum('pd_used'),made:pnum('pd_made'),left:pnum('pd_left'),leftCost:pnum('pd_leftCost'),loss:pnum('pd_loss')};
+  if(r.used==null&&r.made==null&&r.left==null&&r.leftCost==null&&r.loss==null){
+    el.textContent='填完就能看到今天的损耗率，收工前看一眼就知道料超没超';return;
+  }
+  const rate=lossRate(r);
+  el.textContent='用料 '+(r.used!=null?r.used+' 斤':'—')+' · 产出 '+(r.made!=null?r.made+' 碗':'—')+' · 剩余 '+(r.left!=null?r.left+' 斤':'—')+(r.leftCost!=null?('（'+money(r.leftCost)+' 元）'):'')+' · 损耗 '+(r.loss!=null?r.loss+' 斤':'—')+(rate!=null?('，损耗率 '+rate+'%'):'');
+}
+function buildProdUI(){
+  const vd=$('view-daily');
+  if(!vd||$('prodCard'))return;
+  const lab1=document.createElement('div');lab1.style.cssText=BLOCK_STYLE;lab1.textContent='① 日报流水';
+  vd.insertBefore(lab1,vd.children[1]);
+  const lab2=document.createElement('div');lab2.style.cssText=BLOCK_STYLE;lab2.textContent='② 原料生产与损耗';
+  vd.appendChild(lab2);
+  const card=document.createElement('div');card.id='prodCard';card.className='card';
+  const f3=PROD_F.slice(0,3).map(f=>'<div class="field"><label>'+f.n+'（'+f.u+'）</label><input type="number" id="pd_'+f.k+'" inputmode="decimal" placeholder="0"></div>').join('');
+  const f2=PROD_F.slice(3).map(f=>'<div class="field"><label>'+f.n+'（'+f.u+'）</label><input type="number" id="pd_'+f.k+'" inputmode="decimal" placeholder="0"></div>').join('');
+  card.innerHTML='<h2>原料生产与损耗</h2><p class="hint">每天收工前填一次：今天用了多少料、出了多少成品、剩多少、损耗多少。店长按天看损耗率，就能发现料是不是用超了</p>'
+    +'<div class="row three">'+f3+'</div>'
+    +'<div class="row two" style="margin-top:10px">'+f2+'</div>'
+    +'<div style="margin-top:12px"><button class="btn ghost" id="btnProd" type="button">保存今天的生产与损耗</button></div>'
+    +'<p class="mini" id="prodMsg" style="margin-top:10px"></p>';
+  vd.appendChild(card);
+  $('btnProd').onclick=saveProd;
+  PROD_F.forEach(f=>{const el=$('pd_'+f.k); if(el)el.oninput=updProdMsg;});
+}
+function buildProdHist(){
+  const vr=$('view-record');
+  if(!vr||$('prodHistCard'))return;
+  const lab=document.createElement('div');lab.style.cssText=BLOCK_STYLE;lab.textContent='② 原料生产与损耗';
+  vr.appendChild(lab);
+  const card=document.createElement('div');card.id='prodHistCard';card.className='card';
+  card.innerHTML='<h2>生产与损耗流水</h2><p class="hint">每天一条，从新到旧；底部是近 30 天的合计和平均损耗率</p>
+<div class="list" id="prodList"></div>
+<p class="mini" id="prodSum" style="margin-top:10px"></p>';
+  vr.appendChild(card);
+}
+function renderProd(){
+  const r=prodRow(todayStr());
+  PROD_F.forEach(f=>{const el=$('pd_'+f.k); if(el)el.value=(r&&r[f.k]!=null)?r[f.k]:'';});
+  updProdMsg();
+  const box=$('prodList'); if(!box)return;
+  const rows=(S.prod||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  box.innerHTML=rows.length?rows.map(x=>{
+    const rate=lossRate(x);
+    const sub='用料 '+(x.used!=null?x.used+' 斤':'—')+' · 产出 '+(x.made!=null?x.made+' 碗':'—')+' · 剩余 '+(x.left!=null?x.left+' 斤':'—');
+    const v=(x.loss!=null?x.loss+' 斤损耗':'—')+(rate!=null?('（'+rate+'%）'):'');
+    return '<div class="item"><div><div class="nm">'+x.date+'</div><div class="sub">'+sub+'</div></div><div class="val" style="text-align:right;font-size:13px">'+v+'</div></div>';
+  }).join(''):'<div class="mini">还没有生产与损耗记录</div>';
+  const sum=$('prodSum');
+  if(sum){
+    const from=new Date(Date.now()-29*864e5);
+    const fromStr=from.getFullYear()+'-'+String(from.getMonth()+1).padStart(2,'0')+'-'+String(from.getDate()).padStart(2,'0');
+    let used=0, loss=0, days=0;
+    rows.forEach(x=>{if(x.date>=fromStr){days++;if(x.used!=null)used+=x.used;if(x.loss!=null)loss+=x.loss;}});
+    const rate=used?Math.round(loss/used*1000)/10:null;
+    sum.textContent=days?('近 30 天 '+days+' 天有记录：用料 '+Math.round(used*100)/100+' 斤 · 损耗 '+Math.round(loss*100)/100+' 斤'+(rate!=null?(' · 平均损耗率 '+rate+'%'):'')):'近 30 天还没有记录';
+  }
+}
+function saveProd(){
+  const rec={date:todayStr()};
+  let any=false;
+  PROD_F.forEach(f=>{const v=pnum('pd_'+f.k);rec[f.k]=v;if(v!=null)any=true;});
+  if(!any){toast('先填一个数');return;}
+  S.prod=(S.prod||[]).filter(r=>r.date!==todayStr());
+  S.prod.push(rec);
+  logAdd('prod','生产用料 '+(rec.used!=null?rec.used+' 斤':'—')+' · 损耗 '+(rec.loss!=null?rec.loss+' 斤':'—'),'产出 '+(rec.made!=null?rec.made+' 碗':'—')+' · 剩余 '+(rec.left!=null?rec.left+' 斤':'—')+(rec.leftCost!=null?(' · 剩余成本 '+money(rec.leftCost)+' 元'):''));
+  save(); renderProd(); if(curView==='log')renderLog();
+  toast('已保存今天的生产与损耗');
 }
 
 /* ============ 日报 ============ */
@@ -393,7 +485,7 @@ function renderCkHistory(){
 }
 
 /* ============ 日志 ============ */
-const LOG_TAG={in:['入库','tag ok'],out:['领用','tag'],check:['盘点','tag gray'],custom:['自购','tag gray'],daily:['日报','tag gray']};
+const LOG_TAG={in:['入库','tag ok'],out:['领用','tag'],check:['盘点','tag gray'],custom:['自购','tag gray'],daily:['日报','tag gray'],prod:['生产损耗','tag warn']};
 function renderLog(){
   const box=$('logList'); if(!box)return;
   const f=($('lgType')&&$('lgType').value)||'全部';
@@ -477,17 +569,17 @@ function show(view){
   curView=view;
   ['daily','stock','check','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
   document.querySelectorAll('.tabs-in button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
-  if(view==='daily') renderDaily();
+  if(view==='daily'){renderDaily();renderProd();}
   if(view==='stock'){renderStock();renderCustom();}
   if(view==='check') renderCheck();
-  if(view==='record') renderRecords();
+  if(view==='record'){renderRecords();renderProd();}
   if(view==='log') renderLog();
   if(view==='setting'){ $('setShop').value=S.shopName; }
   location.hash='#/'+view;
 }
 function renderAll(){
   $('shopName').textContent=S.shopName;
-  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog();
+  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog(); renderProd();
 }
 
 $('btnSave').onclick=submitDaily;
@@ -509,6 +601,8 @@ $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
+buildProdUI();
+buildProdHist();
 syncCopy();
 window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].includes(v))show(v);});
 $('shopName').textContent=S.shopName;
