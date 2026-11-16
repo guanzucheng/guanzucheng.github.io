@@ -121,6 +121,17 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
   <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；报货表里没列、店里临时采买的货，在下面“门店自购”里自己加。</div>
   <div class="card">
+    <h2>记一笔</h2>
+    <div class="row two">
+      <div class="field"><label>原料</label><select id="sItem"></select></div>
+      <div class="field"><label>数量</label><input type="number" id="sQty" inputmode="decimal" placeholder="按该原料单位"></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="field"><label>类型</label><select id="sType"><option value="in">入库</option><option value="out">领用出库</option></select></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="btnStock" type="button">记一笔</button></div>
+  </div>
+  <div class="card">
     <h2>库存账</h2>
     <p class="hint">按品类筛选、按名字搜；入库后显示实时账面</p>
     <div class="row two" style="margin-bottom:10px">
@@ -136,19 +147,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="list" id="stockList"></div>
   </div>
   <div class="card">
-    <h2>记一笔</h2>
-    <div class="row two">
-      <div class="field"><label>原料</label><select id="sItem"></select></div>
-      <div class="field"><label>数量</label><input type="number" id="sQty" inputmode="decimal" placeholder="按该原料单位"></div>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <div class="field"><label>类型</label><select id="sType"><option value="in">入库</option><option value="out">领用出库</option></select></div>
-    </div>
-    <div style="margin-top:12px"><button class="btn ghost" id="btnStock" type="button">记一笔</button></div>
-  </div>
-  <div class="card">
     <h2>门店自购原料</h2>
-    <p class="hint">葱姜蒜、青菜、鸡蛋、各种油等，都在这里自己加，加进来就能一起盘</p>
+    <p class="hint">报货表没列的本地货（一次性手套等），在这里自己加，加进来就能一起盘</p>
     <div class="row three">
       <div class="field"><label>名称</label><input type="text" id="cmName" placeholder="例如 一次性手套"></div>
       <div class="field"><label>单位</label><input type="text" id="cmUnit" placeholder="袋 / 斤 / 个"></div>
