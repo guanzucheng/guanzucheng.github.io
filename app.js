@@ -84,9 +84,9 @@ function mergeMaterials(arr){
 
 const KEY='ysh_local_v2';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[], operators:['店长','店员一','店员二'], currentBy:'店长'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>({...m})), custom:[], checks:[], logs:[]};}
 let S=load();
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.operators=(o.operators&&o.operators.length)?o.operators:['店长','店员一','店员二'];if(!o.currentBy||o.operators.indexOf(o.currentBy)<0)o.currentBy=o.operators[0]||'';o.materials=mergeMaterials(o.materials);return o;}}catch(e){}return seed();}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.materials=mergeMaterials(o.materials);return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
 const $=id=>document.getElementById(id);
@@ -111,44 +111,6 @@ function itemList(){
   return out;
 }
 function findItem(key){return key[0]==='M'?S.materials[Number(key.slice(1))]:S.custom[Number(key.slice(1))];}
-
-/* ============ 操作人 ============ */
-function renderWho(){
-  const sel=$('whoSel'); if(!sel)return;
-  const ops=S.operators||[];
-  sel.innerHTML=ops.length?ops.map(n=>`<option value="${n}">${n}</option>`).join(''):'<option value="">未设置</option>';
-  sel.value=S.currentBy||(ops[0]||'');
-  if($('sBy')&&!$('sBy').value)$('sBy').value=S.currentBy||'';
-  if($('ckBy')&&!$('ckBy').value)$('ckBy').value=S.currentBy||'';
-}
-function setWho(){
-  S.currentBy=($('whoSel')&&$('whoSel').value)||'';
-  save();
-  if($('sBy'))$('sBy').value=S.currentBy;
-  if($('ckBy'))$('ckBy').value=S.currentBy;
-  toast('当前操作人：'+(S.currentBy||'未设置'));
-}
-function renderOps(){
-  const box=$('opList'); if(!box)return;
-  if(!S.operators||!S.operators.length){box.innerHTML='<div class="mini">还没有操作人</div>';return;}
-  box.innerHTML=S.operators.map((n,i)=>`<div class="item"><div class="nm">${n}${n===S.currentBy?' <span class="tag ok">当前</span>':''}</div>
-    <button class="btn plain" data-op="${i}" type="button">删除</button></div>`).join('');
-  box.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{
-    const i=Number(b.dataset.op), gone=S.operators[i];
-    if(S.operators.length<=1){toast('至少留一个操作人');return;}
-    S.operators.splice(i,1);
-    if(S.currentBy===gone)S.currentBy=S.operators[0]||'';
-    save(); renderWho(); renderOps(); toast('已删除 '+gone);
-  });
-}
-function addOp(){
-  const n=$('opName').value.trim();
-  if(!n){toast('先填名字');return;}
-  if(S.operators.indexOf(n)>=0){toast('已有这个人');return;}
-  S.operators.push(n);
-  if(!S.currentBy)S.currentBy=n;
-  save(); $('opName').value=''; renderWho(); renderOps(); toast('已添加 '+n);
-}
 
 /* ============ 日报 ============ */
 function renderDaily(){
@@ -177,7 +139,7 @@ function submitDaily(){
   const rec={date:todayStr(),revenue:rev,dine:num($('fDine').value),group:num($('fGroup').value),take:num($('fTake').value),note:$('fNote').value.trim()};
   S.records=S.records.filter(r=>r.date!==todayStr());
   S.records.push(rec);
-  logAdd('daily','总营业额 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—')+' · 操作人 '+(S.currentBy||'—'));
+  logAdd('daily','总营业额 '+money(rev)+' 元','堂食 '+(rec.dine!=null?money(rec.dine):'—')+' · 团购 '+(rec.group!=null?rec.group+' 单':'—')+' · 外卖 '+(rec.take!=null?rec.take+' 单':'—'));
   save(); toast('已保存今天的日报'); renderRecent(); renderRecords(); if(curView==='log')renderLog();
 }
 
@@ -208,9 +170,8 @@ function stockApply(){
   const isIn=$('sType').value==='in';
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
-  const by=($('sBy')&&$('sBy').value.trim())||S.currentBy||'';
-  logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,('经手人 '+(by||'—'))+' · 账面 '+m.stock+' '+(m.unit||''));
-  save(); $('sQty').value=''; if($('sBy'))$('sBy').value=S.currentBy||'';
+  logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||''));
+  save(); $('sQty').value='';
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
 }
@@ -279,10 +240,9 @@ function updateCkTotal(){
 function saveCheck(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
-  const by=$('ckBy').value.trim()||S.currentBy||'—';
-  S.checks.push({date:todayStr(),by,rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
+  S.checks.push({date:todayStr(),rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
-  logAdd('check',filled.length+' 项已盘','盘点人 '+by+' · 差异合计 '+Math.round(diff*100)/100);
+  logAdd('check',filled.length+' 项已盘','差异合计 '+Math.round(diff*100)/100);
   save(); renderCkHistory(); toast('盘点已保存');
 }
 function renderCkHistory(){
@@ -290,7 +250,7 @@ function renderCkHistory(){
   if(!S.checks.length){box.innerHTML='<div class="mini">还没有盘点记录</div>';return;}
   box.innerHTML=S.checks.slice().reverse().map(c=>{
     const diff=c.rows.reduce((a,r)=>a+Math.abs(r.real-r.book),0);
-    return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项 · 盘点人 ${c.by}</div></div><div class="val">差异量 ${Math.round(diff*100)/100}</div></div>`;
+    return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项</div></div><div class="val">差异量 ${Math.round(diff*100)/100}</div></div>`;
   }).join('');
 }
 
@@ -308,7 +268,7 @@ function renderLog(){
     if(d!==last){out+='<div class="mini" style="margin:10px 0 2px;font-weight:600;color:var(--ink-2)">'+d+'</div>';last=d;}
     const t=LOG_TAG[l.type]||['动作','tag gray'];
     out+='<div class="item"><div><div class="nm" style="font-weight:500">'+l.label
-      +'<span class="tag '+t[1]+'" style="margin-left:6px">'+t[0]+'</span></div>'
+      +'<span class="tag '+t[1]+"" style="margin-left:6px">'+t[0]+'</span></div>'
       +'<div class="sub">'+(l.detail||'')+'</div></div>'
       +'<div class="val mini">'+hhmm(l.at)+'</div></div>';
   });
@@ -341,7 +301,7 @@ function download(name,content,type){
   a.href=URL.createObjectURL(blob); a.download=name; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1500);
 }
-function csvEscape(v){const s=v==null?'':String(v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function csvEscape(v){const s=v==null?'':String(v);return /[\",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
 function expJson(){download('门店数据备份-'+todayStr()+'.json',JSON.stringify(S,null,2),'application/json');toast('已导出 JSON');}
 function expCsv(){
   const head=['日期','总营业额','堂食(元)','团购(单)','外卖(单)','今日总结'];
@@ -351,9 +311,9 @@ function expCsv(){
 }
 function expCk(){
   if(!S.checks.length){toast('还没有盘点记录');return;}
-  const head=['盘点日期','盘点人','原料','单位','账面','实盘','差异'];
+  const head=['盘点日期','原料','单位','账面','实盘','差异'];
   const rows=[];
-  S.checks.forEach(c=>c.rows.forEach(r=>rows.push([c.date,c.by,r.n,r.unit,r.book,r.real,Math.round((r.real-r.book)*100)/100])));
+  S.checks.forEach(c=>c.rows.forEach(r=>rows.push([c.date,r.n,r.unit,r.book,r.real,Math.round((r.real-r.book)*100)/100])));
   const csv=[head,...rows].map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店盘点-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出盘点 CSV');
 }
@@ -378,11 +338,11 @@ function show(view){
   if(view==='check') renderCheck();
   if(view==='record') renderRecords();
   if(view==='log') renderLog();
-  if(view==='setting'){ $('setShop').value=S.shopName; renderOps(); }
+  if(view==='setting'){ $('setShop').value=S.shopName; }
   location.hash='#/'+view;
 }
 function renderAll(){
-  $('shopName').textContent=S.shopName; renderWho();
+  $('shopName').textContent=S.shopName;
   renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog();
 }
 
@@ -400,11 +360,8 @@ $('stQ').oninput=renderStock;
 $('ckCat').onchange=renderCheck;
 $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
-$('whoSel').onchange=setWho;
-$('btnAddOp').onclick=addOp;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
 window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].includes(v))show(v);});
 $('shopName').textContent=S.shopName;
-renderWho();
 show((location.hash||'#/daily').slice(2)||'daily');
