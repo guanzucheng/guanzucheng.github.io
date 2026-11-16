@@ -155,7 +155,8 @@ function renderStock(){
     return `<div class="item"><div><div class="nm">${m.n}</div><div class="sub">${m.cat||'门店自购'}</div></div>
       <div class="val">${v}</div>${tag}</div>`;
   }).join('');
-  $('sItem').innerHTML=list.map(({key,m})=>`<option value="${key}">${m.n}（${m.unit||''}）</option>`).join('');
+  const all=itemList();
+  $('sItem').innerHTML=all.map(({key,m})=>`<option value="${key}">${m.n}（${m.unit||''}）</option>`).join('');
 }
 function stockApply(){
   const key=$('sItem').value, q=Number($('sQty').value);
@@ -167,8 +168,7 @@ function stockApply(){
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
   logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||''));
-  save(); $('sQty').value='';
-  if($('stQ').value){$('stQ').value='';}
+  save(); $('sQty').value=''; if($('stQ').value)$('stQ').value='';
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
 }
@@ -235,7 +235,7 @@ function updateCkTotal(){
   $('ckDiff').textContent=`已填 ${filled.length} / ${ckRows.length} 项 · 差异量合计 ${Math.round(sum*100)/100}`;
 }
 function saveCheck(){
-  const filled=ckRows.filter(r=>r.real!=null&&r.real!=="");
+  const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
   S.checks.push({date:todayStr(),rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
@@ -262,7 +262,7 @@ function renderLog(){
   let out='',last='';
   logs.forEach(l=>{
     const d=dateOf(l.at);
-    if(d!==last){out+='<div class="mini" style="margin:10px 0 2px;font-weight:600;color:var(--ink-2)">'+d+'</div>';last=d;}
+    if(d!==last){out+=`<div class="mini" style="margin:10px 0 2px;font-weight:600;color:var(--ink-2)">${d}</div>`;last=d;}
     const t=LOG_TAG[l.type]||['动作','tag gray'];
     const tagHtml=`<span class="tag ${t[1]}" style="margin-left:6px">${t[0]}</span>`;
     out+=`<div class="item"><div><div class="nm" style="font-weight:500">${l.label}${tagHtml}</div><div class="sub">${l.detail||''}</div></div><div class="val mini">${hhmm(l.at)}</div></div>`;
