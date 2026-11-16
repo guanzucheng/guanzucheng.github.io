@@ -119,7 +119,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：库存 ===== -->
 <section id="view-stock" hidden>
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
-  <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；在库存账里填一次单价，就能看到每种原料还剩多少钱。单价只存本机，不写进网页代码。</div>
+  <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。</div>
   <div class="card">
     <h2>记一笔</h2>
     <div class="row two">
@@ -133,7 +133,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
   <div class="card">
     <h2>库存账</h2>
-    <p class="hint">按品类筛选、按名字搜；右边填单价（默认按该原料的单位），就会自动算在库金额</p>
+    <p class="hint">按品类筛选、按名字搜；右边是单价（按该原料的单位），改一下金额自动重算</p>
     <div class="mini" id="stVal" style="margin:-4px 0 10px"></div>
     <div class="row two" style="margin-bottom:10px">
       <input type="text" id="stQ" placeholder="搜原料名，例如 木耳">
@@ -255,7 +255,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
   <div class="card">
     <h2>单价与在库金额</h2>
-    <p class="hint">单价只存在这台设备里，不进网页源码、不上传；填了单价，库存页就会显示每种原料还剩多少钱</p>
+    <p class="hint">已预置总部核算参考单价（元/对应单位），门店可以直接在库存页改；改过的单价只存在这台设备、不上传</p>
     <div class="field">
       <label>批量填单价（一行一项：原料名 单价）</label>
       <textarea id="prText" placeholder="木耳 32&#10;胡辣汤料 43&#10;粉条 3.3"></textarea>
