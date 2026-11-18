@@ -206,7 +206,7 @@ function submitDaily(){
 function costNum(id){const v=Number($(id).value);return isNaN(v)?0:v;}
 function costCalc(){
   const rent=costNum('cRent'), property=costNum('cProperty'), water=costNum('cWater'), labor=costNum('cLabor');
-  let margin=costNum('cMargin'); if(!margin||margin<=0||margin>=100) margin=65;
+  const margin=65;
   const fixed=Math.round((rent+property+water+labor)*100)/100;
   const m=margin/100;
   const beMonth=m>0?Math.round(fixed/m*100)/100:0;
@@ -218,7 +218,6 @@ function renderCost(){
   $('cProperty').value=S.cost.property!=null?S.cost.property:'';
   $('cWater').value=S.cost.water!=null?S.cost.water:'';
   $('cLabor').value=S.cost.labor!=null?S.cost.labor:'';
-  $('cMargin').value=S.cost.margin!=null?S.cost.margin:65;
   drawCost();
 }
 function drawCost(){
@@ -230,9 +229,7 @@ function drawCost(){
 }
 function submitCost(){
   const rent=costNum('cRent'), property=costNum('cProperty'), water=costNum('cWater'), labor=costNum('cLabor');
-  let margin=costNum('cMargin');
-  if(!margin||margin<=0||margin>=100){toast('毛利率请填 0~100 之间的数，如 65');$('cMargin').focus();return;}
-  S.cost={rent:rent||null,property:property||null,water:water||null,labor:labor||null,margin:margin};
-  logAdd('cost','更新月度成本设置','房租 '+money(rent)+' · 物业 '+money(property)+' · 水电 '+money(water)+' · 人工 '+money(labor)+' · 毛利率 '+margin+'%');
+  S.cost={rent:rent||null,property:property||null,water:water||null,labor:labor||null,margin:65};
+  logAdd('cost','更新月度成本设置','房租 '+money(rent)+' · 物业 '+money(property)+' · 水电 '+money(water)+' · 人工 '+money(labor));
   save(); drawCost(); toast('已保存成本设置');
 }
