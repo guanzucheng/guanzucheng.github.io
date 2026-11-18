@@ -86,6 +86,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <button data-view="daily" class="on">今日日报</button>
     <button data-view="stock">库存</button>
     <button data-view="check">月度盘点</button>
+    <button data-view="cost">运营成本</button>
     <button data-view="record">历史记录</button>
     <button data-view="log">操作日志</button>
     <button data-view="setting">设置</button>
@@ -99,7 +100,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <h1 class="title">今日日报<span>总金额 + 星期天气 + 一句话总结</span></h1>
   <div class="card">
     <div class="row two">
-      <div class="field"><label>营业日期</label><input type="text" id="fDate" readonly></div>
+      <div class="field"><label>营业日期（可补填昨天或之前）</label><input type="date" id="fDate"></div>
       <div class="field"><label>星期几</label><input type="text" id="fWeek" readonly></div>
     </div>
     <div class="row two" style="margin-top:10px">
@@ -178,7 +179,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <h2 id="ckTitle">本月盘点</h2>
     <p class="hint">填实盘数，系统自动算差异；填过单价的原料还会同时算出差异金额</p>
     <div class="row">
-      <div class="field"><label>盘点日期</label><input type="text" id="ckDate" readonly></div>
+      <div class="field"><label>盘点日期（错过月底可补选上月最后一天）</label><input type="date" id="ckDate"></div>
     </div>
     <div class="row two" style="margin-top:10px">
       <div class="field">
@@ -209,6 +210,30 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <div class="card">
     <h2>历月盘点</h2>
     <div class="list" id="ckHistory"></div>
+  </div>
+</section>
+
+<!-- ===== 视图：运营成本 ===== -->
+<section id="view-cost" hidden>
+  <h1 class="title">运营成本<span>固定开支 + 毛利率，算每天保本要做多少营业额</span></h1>
+  <div class="card">
+    <h2>月度固定开支（元 / 月）</h2>
+    <p class="hint">按月填写房租、物业费、水电费、人工费；数字只存在这台设备</p>
+    <div class="row two">
+      <div class="field"><label>房租</label><input type="number" id="cRent" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>物业费</label><input type="number" id="cProperty" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>水电费</label><input type="number" id="cWater" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>人工费</label><input type="number" id="cLabor" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field"><label>综合毛利率（%，默认 65%）</label><input type="number" id="cMargin" inputmode="decimal" placeholder="65"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="btnCost" type="button">保存成本设置</button></div>
+  </div>
+  <div class="card">
+    <h2>盈亏平衡点</h2>
+    <div class="list" id="costResult"></div>
+    <p class="hint" style="margin-top:10px">测算口径：月保本营业额 = 月固定开支 ÷ 毛利率；日均保本 = 月保本营业额 ÷ 30 天。毛利率指（营业额 − 食材等变动成本）÷ 营业额。</p>
   </div>
 </section>
 
@@ -245,6 +270,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
         <option value="check">只看盘点</option>
         <option value="custom">只看自购原料</option>
         <option value="daily">只看日报</option>
+        <option value="cost">只看成本设置</option>
       </select>
       <span class="mini" id="lgCount"></span>
     </div>
@@ -303,9 +329,9 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="app1.js?v=20261118g"></script>
-<script src="app2.js?v=20261118g"></script>
-<script src="app3.js?v=20261118g"></script>
-<script src="app4.js?v=20261118g"></script>
+<script src="app1.js?v=20261118h"></script>
+<script src="app2.js?v=20261118h"></script>
+<script src="app3.js?v=20261118h"></script>
+<script src="app4.js?v=20261118h"></script>
 </body>
 </html>
