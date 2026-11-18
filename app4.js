@@ -25,8 +25,8 @@ function clearLogs(){
 /* ============ 历史 ============ */
 function renderRecords(){
   const rows=S.records.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  $('recBody').innerHTML=rows.length?rows.map(r=>'<tr><td>'+r.date+'</td><td>'+money(r.revenue)+'</td><td>'+(r.dine!=null?money(r.dine):'—')+'</td><td>'+(r.group!=null?r.group:'—')+'</td><td>'+(r.take!=null?r.take:'—')+'</td></tr>').join('')
-    :'<tr><td colspan="5" class="mini">还没有日报</td></tr>';
+  $('recBody').innerHTML=rows.length?rows.map(r=>'<tr><td>'+r.date+'<br><span style="color:var(--ink-2);font-size:12px">'+weekLabel(r.date)+'</span></td><td>'+(r.weather||'—')+'</td><td>'+money(r.revenue)+'</td><td>'+(r.note||'—')+'</td></tr>').join('')
+    :'<tr><td colspan="4" class="mini">还没有日报</td></tr>';
   const days=rows.length;
   const total=rows.reduce((a,r)=>a+r.revenue,0);
   const avg=days?total/days:0;
@@ -34,97 +34,4 @@ function renderRecords(){
 }
 
 /* ============ 导出与设置 ============ */
-function download(name,content,type){
-  const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=name; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
-}
-function csvEscape(v){
-  const s=v==null?'':String(v);
-  const need=s.indexOf('"')>=0||s.indexOf(',')>=0||s.indexOf('\n')>=0;
-  return need?'"'+s.split('"').join('""')+'"':s;
-}
-function expJson(){download('门店数据备份-'+todayStr()+'.json',JSON.stringify(S,null,2),'application/json');toast('已导出 JSON');}
-function expCsv(){
-  const head=['日期','总营业额','堂食(元)','团购(单)','外卖(单)','今日总结'];
-  const rows=S.records.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>[r.date,r.revenue,r.dine,r.group,r.take,r.note||'']);
-  const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
-  download('门店日报-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出日报 CSV');
-}
-function expCk(){
-  if(!S.checks.length){toast('还没有盘点记录');return;}
-  const head=['盘点日期','原料','单位','账面','实盘','差异','差异金额'];
-  const rows=[];
-  S.checks.forEach(c=>c.rows.forEach(r=>{
-    const d2=Math.round((r.real-r.book)*100)/100;
-    const a=(r.price==null)?'':Math.round(d2*r.price*100)/100;
-    rows.push([c.date,r.n,r.unit,r.book,r.real,d2,a]);
-  }));
-  const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
-  download('门店盘点-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出盘点 CSV');
-}
-function saveShop(){
-  const v=$('setShop').value.trim();
-  if(!v){toast('填个店名');return;}
-  S.shopName=v; save(); $('shopName').textContent=v; toast('已保存');
-}
-function resetAll(){
-  if(!confirm('会清空本机所有日报、库存和盘点记录，确定？')){return;}
-  S=seed(); save(); $('shopName').textContent=S.shopName; $('setShop').value=S.shopName;
-  renderAll(); toast('已清空');
-}
-
-/* ============ 路由 ============ */
-function show(view){
-  curView=view;
-  ['daily','stock','check','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
-  document.querySelectorAll('.tabs-in button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
-  if(view==='daily') renderDaily();
-  if(view==='stock'){renderStock();renderCustom();}
-  if(view==='check') renderCheck();
-  if(view==='record') renderRecords();
-  if(view==='log') renderLog();
-  if(view==='setting'){ $('setShop').value=S.shopName; }
-  location.hash='#/'+view;
-}
-function renderAll(){
-  $('shopName').textContent=S.shopName;
-  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog();
-}
-
-$('btnSave').onclick=submitDaily;
-$('btnStock').onclick=stockApply;
-$('btnAddCustom').onclick=addCustom;
-$('btnCk').onclick=saveCheck;
-$('btnShop').onclick=saveShop;
-$('btnExpJson').onclick=expJson;
-$('btnExpCsv').onclick=expCsv;
-$('btnExpCk').onclick=expCk;
-$('btnExpStock').onclick=expStock;
-$('btnImpPrice').onclick=importPrices;
-$('btnExpPrice').onclick=expPrices;
-$('btnReset').onclick=resetAll;
-$('stCat').onchange=renderStock;
-$('stQ').oninput=renderStock;
-$('ckCat').onchange=renderCheck;
-$('ckQ').oninput=drawCheck;
-$('lgType').onchange=renderLog;
-$('btnLogClr').onclick=clearLogs;
-document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
-
-/* 记一笔：原料搜索组合框交互 */
-(function initCombo(){
-  const input=$('sItemInput'), box=$('sItemList');
-  if(!input||!box) return;
-  input.onfocus=()=>{ refreshCombo(); box.hidden=false; };
-  input.oninput=()=>{ selItemKey=''; refreshCombo(); };
-  document.addEventListener('click',e=>{
-    if(!$('sCombo').contains(e.target)) box.hidden=true;
-  });
-})();
-
-syncCopy();
-window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].indexOf(v)>=0)show(v);});
-$('shopName').textContent=S.shopName;
-show((location.hash||'#/daily').slice(2)||'daily');
+download placeholder
