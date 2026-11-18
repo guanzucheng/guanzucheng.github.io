@@ -237,8 +237,7 @@ function renderStock(){
       save(); renderStock();
     };
   });
-  const all=itemList();
-  $('sItem').innerHTML=all.map(({key,m})=>`<option value="${key}">${m.n}（${m.unit||''}）</option>`).join('');
+  refreshCombo();
   renderStockTotal();
 }
 function renderStockTotal(){
@@ -248,11 +247,42 @@ function renderStockTotal(){
   const main=t.filled?('剩余库存总金额 <b style="color:var(--accent);font-size:19px;font-weight:700">'+money(t.sum)+' 元</b>'):('剩余库存总金额 <b style="color:var(--ink-3);font-size:17px">待入库</b>');
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><span>${main}</span></div><div class="mini" style="margin-top:5px">已填单价 ${t.filled} / ${total} 项 · 单价可按当地进价随时改，改完金额自动重算</div>`;
 }
+
+/* ============ 记一笔：原料搜索组合框 ============ */
+let selItemKey='';
+function matchCombo(kw){
+  kw=(kw||'').trim().toLowerCase();
+  const cat=($('stCat')&&$('stCat').value)||'全部';
+  return itemList().filter(({m})=>{
+    if(cat!=='全部'&&(m.cat||'门店自购')!==cat) return false;
+    if(!kw) return true;
+    return m.n.toLowerCase().indexOf(kw)>=0;
+  });
+}
+function refreshCombo(){
+  const input=$('sItemInput'), box=$('sItemList');
+  if(!input||!box) return;
+  const rows=matchCombo(input.value);
+  if(!rows.length){
+    box.innerHTML='<div class="empty">没找到这个原料，可先在下面“门店自购”里添加</div>';
+    box.hidden=false; return;
+  }
+  box.innerHTML=rows.map(({key,m})=>`<div class="opt${key===selItemKey?' on':''}" data-key="${key}">${m.n}<span class="sub">${m.unit||''} · ${m.cat||'门店自购'}</span></div>`).join('');
+  box.querySelectorAll('.opt').forEach(o=>{
+    o.onclick=()=>{
+      selItemKey=o.dataset.key;
+      const m=findItem(selItemKey);
+      input.value=m?m.n:'';
+      box.hidden=true;
+      $('sQty').focus();
+    };
+  });
+}
 function stockApply(){
-  const key=$('sItem').value, q=Number($('sQty').value);
-  if(!key){toast('先选原料');return;}
-  if(!q||q<=0){toast('数量不对');return;}
-  const m=findItem(key); if(!m){toast('原料没找到');return;}
+  if(!selItemKey){toast('先选原料，可打字搜索后点选');$('sItemInput').focus();return;}
+  const q=Number($('sQty').value);
+  if(!q||q<=0){toast('数量不对');$('sQty').focus();return;}
+  const m=findItem(selItemKey); if(!m){toast('原料没找到');return;}
   const cur=m.stock==null?0:m.stock;
   const isIn=$('sType').value==='in';
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
@@ -260,6 +290,7 @@ function stockApply(){
   const a=amtOf(m);
   logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||'')+(a!=null?(' · 金额 '+money(a)+' 元'):''));
   save(); $('sQty').value=''; if($('stQ').value)$('stQ').value='';
+  selItemKey=''; $('sItemInput').value='';
   renderStock(); if(curView==='log')renderLog();
   toast(isIn?'已入库':'已领用');
 }
@@ -508,6 +539,17 @@ $('ckCat').onchange=renderCheck;
 $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
+
+/* 记一笔：原料搜索组合框交互 */
+(function initCombo(){
+  const input=$('sItemInput'), box=$('sItemList');
+  if(!input||!box) return;
+  input.onfocus=()=>{ refreshCombo(); box.hidden=false; };
+  input.oninput=()=>{ selItemKey=''; refreshCombo(); };
+  document.addEventListener('click',e=>{
+    if(!$('sCombo').contains(e.target)) box.hidden=true;
+  });
+})();
 
 syncCopy();
 window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].includes(v))show(v);});
