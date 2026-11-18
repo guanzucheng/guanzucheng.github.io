@@ -1,3 +1,0 @@
-probe line one
-var x = 'abc';
-line three
