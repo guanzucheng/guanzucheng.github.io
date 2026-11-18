@@ -94,6 +94,7 @@ function mergeMaterials(arr){
 const KEY="ysh_local_v2";
 function pad2(n){n=String(n);return n.length<2?"0"+n:n;}
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function todayStrOf(d){return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
 function weekOf(d){const w=["周日","周一","周二","周三","周四","周五","周六"];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+"T00:00:00");if(isNaN(d.getTime()))return "—";return weekOf(d);}
 function seed(){return {shopName:"我的门店",records:[],materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})),custom:[],checks:[],logs:[],mig:"u3"};}
