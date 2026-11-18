@@ -1,3 +1,0 @@
-{n:'item0',unit:'斤',cat:'食材'},
-{n:'item1',unit:'斤',cat:'食材'},
-{n:'item2',unit:'斤',cat:'食材'},
