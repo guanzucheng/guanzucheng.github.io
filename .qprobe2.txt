@@ -1,0 +1,3 @@
+const x = `<div class="item">${a}</div>`;
+const y = `堂食 ${v != null ? m(v) + ' 元' : '—'}`;
+return `<tr><td>${r.n}</td><td>${r.book}</td></tr>`;
