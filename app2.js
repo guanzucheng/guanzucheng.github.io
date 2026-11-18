@@ -14,6 +14,12 @@ function renderStock(){
   const cat=($('stCat')&&$('stCat').value)||'全部';
   const q=(($('stQ')&&$('stQ').value)||'').trim();
   const list=itemList().filter(({m})=>(cat==='全部'||(m.cat||'门店自购')===cat)&&(!q||m.n.indexOf(q)>=0));
+  list.sort((a,b)=>{
+    const aHas=a.m.stock!=null, bHas=b.m.stock!=null;
+    if(aHas!==bHas) return aHas?-1:1;
+    if(aHas&&bHas) return (b.m.stock||0)-(a.m.stock||0);
+    return 0;
+  });
   const box=$('stockList');
   if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
