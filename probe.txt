@@ -1,0 +1,3 @@
+const T = "你好，世界";
+const MSG = "天气 晴 · 总结 今天客流平稳";
+function probe() { return T + " " + MSG; }
