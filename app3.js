@@ -48,10 +48,10 @@ function ckVisible(){
     return m.n.toLowerCase().indexOf(q)>=0;
   });
 }
+function ckTitleFor(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '本月盘点';return `${d.getFullYear()} 年 ${d.getMonth()+1} 月盘点`;}
 function renderCheck(){
-  const d=new Date();
-  $('ckDate').value=todayStr();
-  $('ckTitle').textContent=d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月盘点';
+  if(!$('ckDate').value)$('ckDate').value=todayStr();
+  $('ckTitle').textContent=ckTitleFor($('ckDate').value);
   rebuildCheck();
   drawCheck();
 }
@@ -65,13 +65,15 @@ function drawCheck(){
   const vis=ckVisible();
   const body=$('ckBody');
   if(!vis.length){body.innerHTML='<tr><td colspan="5" class="mini">没有匹配的原料</td></tr>';updateCkTotal();return;}
-  body.innerHTML=vis.map(x=>{const r=x.r;return '<tr><td>'+r.n+'</td><td>'+(r.book==null?'未建账':r.book+' '+r.unit)+'</td><td><input type="number" data-i="'+x.i+'" class="ckIn" placeholder="实盘" value="'+(r.real==null?'':r.real)+'" style="padding:5px 8px"></td><td class="ckDiff" data-i="'+x.i+'">—</td><td class="ckAmt" data-i="'+x.i+'">—</td></tr>';}).join('');
+  body.innerHTML=vis.map(x=>{const r=x.r;return `<tr><td>${r.n}</td><td>${r.book==null?'未建账':r.book+' '+r.unit}</td>
+    <td><input type="number" data-i="${x.i}" class="ckIn" placeholder="实盘" value="${r.real==null?'':r.real}" style="padding:5px 8px"></td>
+    <td class="ckDiff" data-i="${x.i}">—</td><td class="ckAmt" data-i="${x.i}">—</td></tr>`;}).join('');
   body.querySelectorAll('.ckIn').forEach(inp=>{
     inp.oninput=()=>{
       const i=Number(inp.dataset.i), v=inp.value===''?null:Number(inp.value);
       ckRows[i].real=v;
-      const cell=body.querySelector('.ckDiff[data-i="'+i+'"]');
-      const amtCell=body.querySelector('.ckAmt[data-i="'+i+'"]');
+      const cell=body.querySelector(`.ckDiff[data-i="${i}"]`);
+      const amtCell=body.querySelector(`.ckAmt[data-i="${i}"]`);
       if(v==null){cell.textContent='—';cell.style.color='';if(amtCell)amtCell.textContent='—';}
       else{
         const d2=Math.round((v-(ckRows[i].book==null?0:ckRows[i].book))*100)/100;
@@ -88,8 +90,8 @@ function drawCheck(){
   });
   vis.forEach(x=>{
     const r=x.r, i=x.i;
-    const cell=body.querySelector('.ckDiff[data-i="'+i+'"]');
-    const amtCell=body.querySelector('.ckAmt[data-i="'+i+'"]');
+    const cell=body.querySelector(`.ckDiff[data-i="${i}"]`);
+    const amtCell=body.querySelector(`.ckAmt[data-i="${i}"]`);
     if(r.real!=null&&r.real!==''){
       const d2=Math.round((r.real-(r.book==null?0:r.book))*100)/100;
       if(cell){cell.textContent=(d2>0?'+':'')+d2+' '+r.unit;cell.style.color=d2===0?'':'var(--warn)';}
@@ -107,15 +109,16 @@ function updateCkTotal(){
     sum+=Math.abs(d2);
     if(r.price!=null){amt+=Math.abs(d2*r.price);amtN++;}
   });
-  $('ckDiff').textContent='已填 '+filled.length+' / '+ckRows.length+' 项 · 差异量合计 '+Math.round(sum*100)/100+(amtN?(' · 差异金额约 '+money(Math.round(amt*100)/100)+' 元'):'');
+  $('ckDiff').textContent=`已填 ${filled.length} / ${ckRows.length} 项 · 差异量合计 ${Math.round(sum*100)/100}`+(amtN?(' · 差异金额约 '+money(Math.round(amt*100)/100)+' 元'):'');
 }
 function saveCheck(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
-  S.checks.push({date:todayStr(),rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real,price:r.price==null?null:r.price}))});
+  const cdate=$('ckDate').value||todayStr();
+  S.checks.push({date:cdate,rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real,price:r.price==null?null:r.price}))});
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
   logAdd('check',filled.length+' 项已盘','差异合计 '+Math.round(diff*100)/100);
-  save(); renderCkHistory(); toast('盘点已保存');
+  save(); renderCkHistory(); toast('盘点已保存（'+cdate+'）');
 }
 function renderCkHistory(){
   const box=$('ckHistory');
@@ -123,6 +126,6 @@ function renderCkHistory(){
   box.innerHTML=S.checks.slice().reverse().map(c=>{
     const diff=c.rows.reduce((a,r)=>a+Math.abs(r.real-r.book),0);
     let amt=0; c.rows.forEach(r=>{if(r.price!=null)amt+=Math.abs((r.real-r.book)*r.price);});
-    return '<div class="item"><div><div class="nm">'+c.date+'</div><div class="sub">'+c.rows.length+' 项</div></div><div class="val" style="text-align:right">差异量 '+Math.round(diff*100)/100+'<div class="sub" style="font-weight:400">'+(amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —')+'</div></div></div>';
+    return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项</div></div><div class="val" style="text-align:right">差异量 ${Math.round(diff*100)/100}<div class="sub" style="font-weight:400">${amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —'}</div></div></div>`;
   }).join('');
 }
