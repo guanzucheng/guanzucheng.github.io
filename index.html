@@ -86,9 +86,9 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <button data-view="daily" class="on">今日日报</button>
     <button data-view="stock">库存</button>
     <button data-view="check">月度盘点</button>
-    <button data-view="cost">运营成本</button>
     <button data-view="record">历史记录</button>
     <button data-view="log">操作日志</button>
+    <button data-view="cost">运营成本</button>
     <button data-view="setting">设置</button>
   </div></nav>
 </header>
@@ -215,7 +215,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <!-- ===== 视图：运营成本 ===== -->
 <section id="view-cost" hidden>
-  <h1 class="title">运营成本<span>固定开支 + 毛利率，算每天保本要做多少营业额</span></h1>
+  <h1 class="title">运营成本<span>固定开支，按 65% 毛利率算每天保本营业额</span></h1>
   <div class="card">
     <h2>月度固定开支（元 / 月）</h2>
     <p class="hint">按月填写房租、物业费、水电费、人工费；数字只存在这台设备</p>
@@ -225,15 +225,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <div class="field"><label>水电费</label><input type="number" id="cWater" inputmode="decimal" placeholder="0"></div>
       <div class="field"><label>人工费</label><input type="number" id="cLabor" inputmode="decimal" placeholder="0"></div>
     </div>
-    <div class="row two" style="margin-top:10px">
-      <div class="field"><label>综合毛利率（%，默认 65%）</label><input type="number" id="cMargin" inputmode="decimal" placeholder="65"></div>
-    </div>
     <div style="margin-top:12px"><button class="btn" id="btnCost" type="button">保存成本设置</button></div>
   </div>
   <div class="card">
     <h2>盈亏平衡点</h2>
     <div class="list" id="costResult"></div>
-    <p class="hint" style="margin-top:10px">测算口径：月保本营业额 = 月固定开支 ÷ 毛利率；日均保本 = 月保本营业额 ÷ 30 天。毛利率指（营业额 − 食材等变动成本）÷ 营业额。</p>
+    <p class="hint" style="margin-top:10px">测算口径（默认综合毛利率 65%）：月保本营业额 = 月固定开支 ÷ 65%；日均保本 = 月保本营业额 ÷ 30 天。</p>
   </div>
 </section>
 
@@ -329,9 +326,9 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="app1.js?v=20261118h"></script>
-<script src="app2.js?v=20261118h"></script>
-<script src="app3.js?v=20261118h"></script>
-<script src="app4.js?v=20261118h"></script>
+<script src="app1.js?v=20261118i"></script>
+<script src="app2.js?v=20261118i"></script>
+<script src="app3.js?v=20261118i"></script>
+<script src="app4.js?v=20261118i"></script>
 </body>
 </html>
