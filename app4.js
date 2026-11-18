@@ -1,5 +1,5 @@
 /* ============ 日志 ============ */
-const LOG_TAG={in:['入库','tag ok'],out:['领用','tag'],check:['盘点','tag gray'],custom:['自购','tag gray'],daily:['日报','tag gray']};
+const LOG_TAG={in:['入库','tag ok'],out:['领用','tag'],check:['盘点','tag gray'],custom:['自购','tag gray'],daily:['日报','tag gray'],cost:['成本','tag gray']};
 function renderLog(){
   const box=$('logList'); if(!box)return;
   const f=($('lgType')&&$('lgType').value)||'全部';
@@ -25,36 +25,16 @@ function clearLogs(){
 /* ============ 历史 ============ */
 function renderRecords(){
   const rows=S.records.slice().sort((a,b)=>b.date.localeCompare(a.date));
-  $('recBody').innerHTML=rows.length?rows.map(r=>`<tr><td>${r.date}<br><span style="color:var(--ink-2);font-size:12px">${weekLabel(r.date)}</span></td><td>${weekLabel(r.date)}</td><td>${r.weather||'—'}</td><td>${money(r.revenue)}</td></tr>`).join('')
+  $('recBody').innerHTML=rows.length?rows.map(r=>`<tr><td>${r.date}</td><td>${weekLabel(r.date)}</td><td>${r.weather||'—'}</td><td>${money(r.revenue)}</td></tr>`).join('')
     :'<tr><td colspan="4" class="mini">还没有日报</td></tr>';
   const days=rows.length;
   const total=rows.reduce((a,r)=>a+r.revenue,0);
   const avg=days?total/days:0;
-  const byDate={}; rows.forEach(r=>byDate[r.date]=r.revenue);
-  const today=new Date(); today.setHours(0,0,0,0);
-  let cur7=0, curN=0, prev7=0, prevN=0;
-  for(let i=0;i<7;i++){
-    const c=new Date(today); c.setDate(today.getDate()-i);
-    const cs=todayStrOf(c);
-    if(byDate[cs]!=null){cur7+=byDate[cs];curN++;}
-    const p=new Date(c); p.setDate(c.getDate()-7);
-    const ps=todayStrOf(p);
-    if(byDate[ps]!=null){prev7+=byDate[ps];prevN++;}
-  }
-  let compare='—';
-  if(prevN>0&&prev7>0){
-    const diff=Math.round((cur7-prev7)*100)/100;
-    const pct=Math.round((diff/prev7)*100);
-    const arrow=diff>0?'增':(diff<0?'减':'持平');
-    compare=`较上周同期 ${arrow} ${money(Math.abs(diff))} 元（${diff>0?'+':''}${pct}%）`;
-  }else{
-    compare='较上周同期 —（上周暂无同期数据）';
-  }
   $('recSum').innerHTML=`<div class="item"><div class="nm">累计营业额</div><div class="val">${money(total)} 元</div></div>
     <div class="item"><div class="nm">记录天数</div><div class="val">${days} 天</div></div>
-    <div class="item"><div class="nm">日均</div><div class="val">${money(avg)} 元</div></div>
-    <div class="item"><div class="nm">上周同期对比</div><div class="val" style="font-size:13px">${compare}</div></div>`;
+    <div class="item"><div class="nm">日均</div><div class="val">${money(avg)} 元</div></div>`;
 }
+
 /* ============ 导出与设置 ============ */
 function download(name,content,type){
   const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
@@ -65,7 +45,7 @@ function download(name,content,type){
 function csvEscape(v){
   const s=v==null?'':String(v);
   const need=s.indexOf('"')>=0||s.indexOf(',')>=0||s.indexOf('\n')>=0;
-  return need?`"${s.split('"').join('""')}"`:s;
+  return need?'"'+s.split('"').join('""')+'"':s;
 }
 function expJson(){download('门店数据备份-'+todayStr()+'.json',JSON.stringify(S,null,2),'application/json');toast('已导出 JSON');}
 function expCsv(){
@@ -100,11 +80,12 @@ function resetAll(){
 /* ============ 路由 ============ */
 function show(view){
   curView=view;
-  ['daily','stock','check','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
+  ['daily','stock','check','cost','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
   document.querySelectorAll('.tabs-in button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
   if(view==='daily') renderDaily();
   if(view==='stock'){renderStock();renderCustom();}
   if(view==='check') renderCheck();
+  if(view==='cost') renderCost();
   if(view==='record') renderRecords();
   if(view==='log') renderLog();
   if(view==='setting'){ $('setShop').value=S.shopName; }
@@ -112,13 +93,17 @@ function show(view){
 }
 function renderAll(){
   $('shopName').textContent=S.shopName;
-  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderRecords(); renderLog();
+  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderCost(); renderRecords(); renderLog();
 }
 
 $('btnSave').onclick=submitDaily;
+$('fDate').onchange=loadDailyForm;
+$('ckDate').onchange=()=>{$('ckTitle').textContent=ckTitleFor($('ckDate').value);};
 $('btnStock').onclick=stockApply;
 $('btnAddCustom').onclick=addCustom;
 $('btnCk').onclick=saveCheck;
+$('btnCost').onclick=submitCost;
+['cRent','cProperty','cWater','cLabor','cMargin'].forEach(id=>$(id).oninput=drawCost);
 $('btnShop').onclick=saveShop;
 $('btnExpJson').onclick=expJson;
 $('btnExpCsv').onclick=expCsv;
@@ -135,6 +120,7 @@ $('lgType').onchange=renderLog;
 $('btnLogClr').onclick=clearLogs;
 document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dataset.view));
 
+/* 记一笔：原料搜索组合框交互 */
 (function initCombo(){
   const input=$('sItemInput'), box=$('sItemList');
   if(!input||!box) return;
@@ -146,6 +132,6 @@ document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dat
 })();
 
 syncCopy();
-window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','record','log','setting'].indexOf(v)>=0)show(v);});
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','cost','record','log','setting'].indexOf(v)>=0)show(v);});
 $('shopName').textContent=S.shopName;
 show((location.hash||'#/daily').slice(2)||'daily');
