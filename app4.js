@@ -103,7 +103,7 @@ $('btnStock').onclick=stockApply;
 $('btnAddCustom').onclick=addCustom;
 $('btnCk').onclick=saveCheck;
 $('btnCost').onclick=submitCost;
-['cRent','cProperty','cWater','cLabor','cMargin'].forEach(id=>$(id).oninput=drawCost);
+['cRent','cProperty','cWater','cLabor'].forEach(id=>$(id).oninput=drawCost);
 $('btnShop').onclick=saveShop;
 $('btnExpJson').onclick=expJson;
 $('btnExpCsv').onclick=expCsv;
