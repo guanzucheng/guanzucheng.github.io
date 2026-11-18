@@ -86,3 +86,33 @@ const REF_PRICES={
   "豆腐":2.2,"茄子":3.5,"香菇":6,"青辣椒":5,"包子专用粉条":3.3,"小香葱":5,"糯米粉":2.64,
   "白糖":3.48,"味精":4.1,"纯正香油":18
 };
+function defaultPrice(n){return (REF_PRICES[n]==null?null:REF_PRICES[n]);}
+function mergeMaterials(arr){
+  const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
+  return MATERIALS.map(m=>{const o=old[m.n];const out=Object.assign({},m,{price:defaultPrice(m.n)});if(!o)return out;if(o.stock!=null)out.stock=o.stock;if(o.price!=null)out.price=o.price;return out;});
+}
+const KEY="ysh_local_v2";
+function pad2(n){n=String(n);return n.length<2?"0"+n:n;}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function weekOf(d){const w=["周日","周一","周二","周三","周四","周五","周六"];return w[d.getDay()];}
+function weekLabel(dateStr){const d=new Date(dateStr+"T00:00:00");if(isNaN(d.getTime()))return "—";return weekOf(d);}
+function seed(){return {shopName:"我的门店",records:[],materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})),custom:[],checks:[],logs:[],mig:"u3"};}
+let S=load();
+function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});o.materials=mergeMaterials(o.materials);if(o.mig!=="u3"){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig="u3";saveRaw(o);}return o;}}catch(e){}return seed();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast("存不下，可能浏览器空间满了");}}
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),1800);}
+function money(n){return String(Math.round(n*100)/100);}
+let curView="daily";
+function dateOf(ts){const d=new Date(ts);return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+function hhmm(ts){const d=new Date(ts);return pad2(d.getHours())+":"+pad2(d.getMinutes());}
+function logAdd(type,label,detail){S.logs.push({at:Date.now(),type,label,detail:detail||""});if(S.logs.length>800)S.logs=S.logs.slice(-800);}
+function itemList(){const out=[];S.materials.forEach((m,i)=>out.push({key:"M"+i,m}));S.custom.forEach((c,i)=>out.push({key:"C"+i,m:c}));return out;}
+function findItem(key){return key[0]==="M"?S.materials[Number(key.slice(1))]:S.custom[Number(key.slice(1))];}
+function amtOf(m){return (m.price!=null&&m.stock!=null)?Math.round(m.stock*m.price*100)/100:null;}
+function stockTotal(){let sum=0,filled=0;itemList().forEach(({m})=>{const a=amtOf(m);if(a!=null){sum+=a;filled++;}});return {sum:Math.round(sum*100)/100,filled};}
+function syncCopy(){const c={};MATERIALS.forEach(m=>c[m.cat]=(c[m.cat]||0)+1);const t=c["食材原料"]||0,p=c["包装物料"]||0,ot=c["其它"]||0,n=MATERIALS.length;const note=document.querySelector("#view-stock .note");if(note)note.textContent="预置总部报货表全部 "+n+" 项原料（食材 "+t+" · 包装 "+p+" · 其它 "+ot+"，食材统一按斤），首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。";const sel=$("ckCat");if(sel&&sel.options.length>=5){sel.options[0].text="食材原料（"+t+" 项）";sel.options[1].text="包装物料（"+p+" 项）";sel.options[2].text="其它（"+ot+" 项）";sel.options[4].text="全部（"+n+" 项 + 自购）";}}
+function renderDaily(){$("fDate").value=todayStr();$("fWeek").value=weekOf(new Date());const rec=S.records.find(r=>r.date===todayStr());$("fRev").value=rec?rec.revenue:"";$("fWeather").value=rec&&rec.weather!=null?rec.weather:"";$("fNote").value=rec?rec.note||"":"";renderRecent();}
+function renderRecent(){const rows=S.records.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);const box=$("recentList");if(!rows.length){box.innerHTML="<div class=\"mini\">还没有记录，今天填第一条</div>";return;}box.innerHTML=rows.map(r=>{const w=r.weather?(" · 天气 "+r.weather):" — ";return "<div class=\"item\"><div><div class=\"nm\">"+r.date+" "+weekLabel(r.date)+"</div><div class=\"sub\">"+w+"</div></div><div class=\"val\">"+money(r.revenue)+" 元</div></div>";}).join("");}
+function submitDaily(){const rev=Number($("fRev").value);if(!rev||rev<=0){toast("总金额还没填");$("fRev").focus();return;}const rec={date:todayStr(),revenue:rev,weather:$("fWeather").value.trim(),note:$("fNote").value.trim()};S.records=S.records.filter(r=>r.date!==todayStr());S.records.push(rec);logAdd("daily","总营业额 "+money(rev)+" 元",(rec.weather?("天气 "+rec.weather):"")+(rec.note?(" · 总结 "+rec.note):""));save();toast("已保存今天的日报");renderRecent();renderRecords();if(curView==="log")renderLog();}
