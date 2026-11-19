@@ -29,11 +29,11 @@ function today() { var d = new Date(); return d.getFullYear() + '年' + (d.getMo
 
 /* ---------------- 模型常量 ---------------- */
 var TYPES = [
-  { k: 'zaocan',    name: '早餐档口（20–70㎡）',      bench: 45,  price: 9,  entry: 0.35, minArea: 20 },
-  { k: 'street',    name: '街边标准店（60–180㎡）',   bench: 60,  price: 12, entry: 0.28, minArea: 60 },
-  { k: 'community', name: '社区店（50–130㎡）',        bench: 52,  price: 11, entry: 0.25, minArea: 50 },
-  { k: 'mall',      name: '商场 / 综合体店（40–150㎡）', bench: 150, price: 16, entry: 0.20, minArea: 40 },
-  { k: 'town',      name: '乡镇 / 县城店（60–200㎡）', bench: 32,  price: 8,  entry: 0.30, minArea: 60 }
+  { k: 'zaocan',    name: '早餐档口（窗口 / 外卖为主）', bench: 45,  price: 9,  entry: 0.35, bestMin: 40, bestMax: 70 },
+  { k: 'street',    name: '街边标准店',                  bench: 60,  price: 12, entry: 0.28, bestMin: 80, bestMax: 100 },
+  { k: 'community', name: '社区店',                      bench: 52,  price: 11, entry: 0.25, bestMin: 80, bestMax: 100 },
+  { k: 'mall',      name: '商场 / 综合体店',              bench: 150, price: 16, entry: 0.20, bestMin: 80, bestMax: 100 },
+  { k: 'town',      name: '乡镇 / 县城店',                bench: 32,  price: 8,  entry: 0.30, bestMin: 80, bestMax: 100 }
 ];
 
 var TRAFFIC = [
@@ -86,6 +86,22 @@ var GRADE_TXT = {
   C: 'C · 谨慎，短板明显', D: 'D · 不建议',
   X: '信息不足，先补齐'
 };
+
+/* 面积适配：豫膳煌门店 80–100㎡ 为最佳，偏离区间要扣分并压等级上限 */
+function areaFit(area, t) {
+  var bMin = t.bestMin, bMax = t.bestMax;
+  if (!(area > 0)) return { adj: 0, ok: true, step: 0, label: '未填', bMin: bMin, bMax: bMax };
+  var adj, step, label;
+  if (area < bMin * 0.75)       { adj = -12; step = 3; label = '明显偏小'; }
+  else if (area < bMin)         { adj = -6;  step = 2; label = '偏小'; }
+  else if (area <= bMax)        { adj = 0;   step = 0; label = '最佳区间'; }
+  else if (area <= bMax * 1.25) { adj = -6;  step = 2; label = '偏大'; }
+  else                          { adj = -12; step = 3; label = '明显偏大'; }
+  return { adj: adj, ok: step === 0, step: step, label: label, bMin: bMin, bMax: bMax };
+}
+function capGrade(g, top) {
+  return ORDER.indexOf(g) < ORDER.indexOf(top) ? top : g;
+}
 
 var state = {
   traffic: null,
@@ -261,7 +277,9 @@ function compute(d) {
   var vo = VIS.find(function (x) { return x.k === d.vis; });
   var sVis = vo ? vo.score : 5;
 
-  var total = Math.round(sTraffic + sBiz + sRent + sComp + sCond + sVis);
+  var fit = areaFit(area, t);
+  var baseTotal = sTraffic + sBiz + sRent + sComp + sCond + sVis;
+  var total = Math.max(0, Math.round(baseTotal + fit.adj));
 
   var dims = [
     { k: 'traffic', name: '客流',      score: sTraffic, max: 30 },
@@ -295,6 +313,11 @@ function compute(d) {
 
   var gradeFinal = shiftGrade(grade, shift);
 
+  /* 面积偏离最佳区间 → 压等级上限（偏大一档封顶 B，明显偏离封顶 C） */
+  if (fit.step >= 3) gradeFinal = capGrade(gradeFinal, 'C');
+  else if (fit.step === 2) gradeFinal = capGrade(gradeFinal, 'B');
+  if (!fit.ok) flags.push('面积 ' + fmt(area) + '㎡ ' + fit.label + '（最佳 ' + fit.bMin + '–' + fit.bMax + '㎡，已扣 ' + Math.abs(fit.adj) + ' 分）');
+
   /* 数据完整度 */
   var filled = 0;
   if (d.name) filled += 1;
@@ -326,7 +349,7 @@ function compute(d) {
     unit: unit, rent: rent, area: area, type: t, traffic: tr,
     estDaily: estDaily, rentRatio: rentRatio,
     rank: rank, weak1: rank[0], weak2: rank[1], top: top,
-    condKnown: condKnown, dist: d
+    condKnown: condKnown, dist: d, fit: fit, baseTotal: Math.round(baseTotal)
   };
   res.verdict = verdictOf(res);
   res.advice = adviceOf(res, d);
@@ -350,8 +373,10 @@ function verdictOf(res) {
   } else {
     v = '不建议按现在的条件签。核心短板在' + w1 + '；要么在签约前把它解决（压租金、改硬件、补客流证据），要么换点位。';
   }
-  if (res.shift > 0 && res.flags.length) {
-    v += '（已被降级：' + res.flags[0] + '）';
+  if (res.grade !== res.gradeRaw && res.grade !== 'X') {
+    var why = (res.shift > 0 && res.flags.length) ? res.flags[0]
+      : (!res.fit || res.fit.ok ? null : '面积偏离 ' + res.fit.bMin + '–' + res.fit.bMax + '㎡ 最佳区间');
+    if (why) v += '（已被降级：' + why + '）';
   }
   if (res.completeness < 85) {
     v += ' 部分信息仍是「不确定」，结论还有变数。';
@@ -394,6 +419,13 @@ function adviceOf(res, d) {
   res.rank.slice(0, 3).forEach(function (dim) {
     out.push(map[dim.k]());
   });
+  if (res.fit && !res.fit.ok && res.area > 0) {
+    if (res.area < res.fit.bMin) {
+      out.unshift('面积 ' + fmt(res.area) + '㎡ 比最佳区间（' + res.fit.bMin + '–' + res.fit.bMax + '㎡）小：堂食位和翻台会被卡住，如果只能选这里，产品结构往外卖、打包倾斜，先确认后厨和出餐动线放得下。');
+    } else {
+      out.unshift('面积 ' + fmt(res.area) + '㎡ 比最佳区间（' + res.fit.bMin + '–' + res.fit.bMax + '㎡）大：多出来的面积不产生营业额、只产生租金，要么把单价谈下来，要么把里侧空间做仓储、半成品加工，别指望多摆几张桌子就回本。');
+    }
+  }
   if (res.completeness < 60) {
     out.push('把「不确定」的几项补齐再复算一次——空着的那几项往往就是决定赚不赚钱的地方。');
   }
@@ -409,7 +441,7 @@ function checksOf(res, d) {
   if (d.comp === 'mid' || d.comp === 'high') c.push('竞品：把 500 米内的店各吃一遍，比出餐速度、份量和客单，判断是增量还是抢客。');
   if (d.comp === 'unk') c.push('竞品：地图搜「胡辣汤」「早餐」，先数清 500 米内到底几家。');
   if (!d.biz.length || d.biz.indexOf('site') >= 0 || d.biz.indexOf('scenic') >= 0) c.push('客群：核实 800 米内真实住户和工位数，新区和景区容易看着热闹、实际没有早餐客。');
-  if (res.area > 0 && res.area < res.type.minArea) c.push('面积 ' + res.area + '㎡ 低于' + res.type.name + '的常规下限，确认备餐、洗碗、储物动线够不够。');
+  if (res.area > 0 && res.fit && !res.fit.ok) c.push('面积：按 ' + res.fit.bMin + '–' + res.fit.bMax + '㎡ 复算一遍，偏小先看堂食翻台和后厨动线，偏大先问能否隔断分租或降单价。');
   if (res.unit && res.unit / res.type.bench > 1.2) c.push('租金：问清租约年限、每年递增、免租期（争取 2–3 个月）、是否含物业费。');
   if (d.vis === 'alley' || d.vis === 'inmall' || d.vis === 'unk') c.push('可见度：从主路口走一遍到店门，看有没有遮挡，评估要不要加引导招牌。');
   if (c.length === 0) c.push('基础信息比较齐，现场复核一次早高峰真实客流，就可以进入谈租。');
@@ -445,6 +477,7 @@ function renderResult(res) {
   facts.push({ k: '月租金', v: fmt(res.rent) + ' 元' });
   facts.push({ k: '租金单价', v: res.unit ? fmt(res.unit) + ' 元/㎡/月' : '—' });
   facts.push({ k: '使用面积', v: fmt(res.area) + ' ㎡' });
+  facts.push({ k: '面积适配', v: res.fit.label + '（最佳 ' + res.fit.bMin + '–' + res.fit.bMax + '㎡）' });
   facts.push({ k: '店型基准区间', v: Math.round(res.type.bench * 0.8) + '–' + Math.round(res.type.bench * 1.2) + ' 元/㎡' });
   facts.push({ k: '日均客流', v: res.traffic.name });
   facts.push({ k: '数据完整度', v: res.completeness + '%' });
@@ -461,6 +494,7 @@ function renderResult(res) {
 
   $('#rNote').textContent =
     '评分口径：客流 30 + 周边业态 20 + 租金单价 20 + 竞品 10 + 硬件 10 + 可见度 10 = 100 分。' +
+    '面积不单列分项，按最佳区间（标准店 80–100㎡、早餐档口 40–70㎡）校正：偏离一档扣 6 分、明显偏离扣 12 分，并把等级上限压到 B 或 C。' +
     '估算营业额 = 客流中位数 × 进店率 × 客单价，误差约 ±30%，只用来感知租售比，不参与打分。' +
     '分数是初筛，不是判决。';
 
@@ -593,7 +627,8 @@ function copyResult() {
   lines.push('得分 ' + res.total + ' 分 ｜ ' + GRADE_TXT[res.grade]);
   lines.push('地址：' + (d.addr || '—'));
   lines.push('店型：' + res.type.name + ' ｜ 月租 ' + fmt(res.rent) + ' 元 ｜ 面积 ' + fmt(res.area) + '㎡' +
-    (res.unit ? ' ｜ 单价 ' + fmt(res.unit) + ' 元/㎡' : ''));
+    (res.unit ? ' ｜ 单价 ' + fmt(res.unit) + ' 元/㎡' : '') +
+    ' ｜ 面积' + res.fit.label + '（最佳 ' + res.fit.bMin + '–' + res.fit.bMax + '㎡）');
   lines.push('');
   lines.push('结论：' + res.verdict);
   lines.push('');
