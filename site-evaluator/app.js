@@ -24,7 +24,7 @@ function storeSet(k, v) {
 }
 function num(v) { var n = parseFloat(String(v).replace(/[^\d.]/g, '')); return isFinite(n) ? n : 0; }
 function fmt(n) { return (Math.round(n) + '').replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>\"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' })[c]; }); }
 function today() { var d = new Date(); return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日'; }
 
 /* ---------------- 模型常量 ---------------- */
@@ -93,7 +93,7 @@ var state = {
   comp: null,
   vis: null,
   cond: [],
-  current: null,
+  current: null,     // 最近一次评分 { data, res }
   mapOpen: false
 };
 
@@ -113,9 +113,11 @@ function renderStatic() {
   $('#cVis').innerHTML     = VIS.map(function (o) { return chipHTML(o.k, o.name); }).join('');
   $('#cCond').innerHTML    = COND.map(function (o) { return chipHTML(o.k, o.name); }).join('');
 
+  // 单选组
   bindSingle('#cTraffic', function (k) { state.traffic = k; });
   bindSingle('#cComp',    function (k) { state.comp = k; });
   bindSingle('#cVis',     function (k) { state.vis = k; });
+  // 多选组
   bindMulti('#cBiz',  state.biz,  function (v) { state.biz = v; });
   bindMulti('#cCond', state.cond, function (v) { state.cond = v; });
 }
@@ -230,7 +232,7 @@ function compute(d) {
     rentRatio = rent / (estDaily * 30);
   }
 
-  /* 租金压力 = 租售比 70% + 单价 30% */
+  /* 租金压力 = 租售比 70% + 单价 30%（小面积档口单价天然高，靠租售比校正） */
   var unitScore = null, ratioScore = null;
   if (unit) {
     var r = unit / t.bench;
@@ -270,6 +272,7 @@ function compute(d) {
     { k: 'vis',     name: '可见度',    score: sVis,     max: 10 }
   ];
 
+  /* 基础等级 + 红线降级 */
   var grade = total >= 80 ? 'A' : total >= 65 ? 'B' : total >= 50 ? 'C' : 'D';
   var flags = [];
   var shift = 0;
@@ -292,6 +295,7 @@ function compute(d) {
 
   var gradeFinal = shiftGrade(grade, shift);
 
+  /* 数据完整度 */
   var filled = 0;
   if (d.name) filled += 1;
   if (d.addr) filled += 1;
@@ -305,11 +309,13 @@ function compute(d) {
   if (d.cond.length) filled += 1;
   var completeness = Math.round(filled / 10 * 100);
 
+  /* 核心信息缺了就不下结论（客流或业态空着，算出来的分没有意义） */
   if (!d.traffic || d.traffic === 'unk' || !d.biz.length) {
     gradeFinal = 'X';
     flags.push('客流或周边业态还没填实，先补齐再算');
   }
 
+  /* 强弱项：门店硬件没填时，不参与排名（避免甩锅给没填的项） */
   var rank = dims.filter(function (x) { return !(x.k === 'cond' && !condKnown); })
     .sort(function (a, b) { return (a.score / a.max) - (b.score / b.max); });
   var top = dims.slice().sort(function (a, b) { return (b.score / b.max) - (a.score / a.max); })[0];
@@ -665,7 +671,7 @@ function initAmap() {
       zoom: 15, center: [113.665, 34.757], resizeEnable: true
     });
     map.on('click', function (e) {
-      pick(e.lnglat.getLng(), e.lnglat.getLat(), null);
+      pick( e.lnglat.getLng(), e.lnglat.getLat(), null);
     });
   }).catch(function (err) {
     $('#mapCanvas').innerHTML = '<div style="padding:14px;font-size:13px;color:#8b827c">地图加载失败：' +
@@ -747,8 +753,9 @@ function stats(lng, lat, addr) {
     });
     var html = '<div class="unitline">800 米内地图统计：' + parts.join(' ｜ ') + '</div>';
     if (rec.length) {
-      state.biz = rec.slice();
-      setOn('#cBiz', rec);
+      var sel = rec.slice();
+      state.biz = sel;
+      setOn('#cBiz', sel);
       html += '<div class="tip">已按地图提示勾选周边业态：' +
         BIZ.filter(function (b) { return rec.indexOf(b.k) >= 0; }).map(function (b) { return b.name; }).join('、') +
         '（不对的话手动改）。</div>';
@@ -762,7 +769,7 @@ function stats(lng, lat, addr) {
   next();
 }
 
-/* ---- 百度（仅地址联想 + 静态图） ---- */
+/* ---- 百度（仅地址联想 + 静态图，作为高德未配置时的兜底） ---- */
 function initBaidu() {
   var box = $('#mapCanvas');
   box.innerHTML = '<div style="padding:14px;color:#8b827c;font-size:13px">已启用百度地址联想。输入地址搜索后可回填；地图展示需要高德 Key。</div>';
@@ -804,7 +811,7 @@ function baiduSearch(q) {
     });
   };
   s.src = 'https://api.map.baidu.com/place/v2/suggestion?query=' + encodeURIComponent(q) +
-    '&region=%E5%85%A8%E5%9B%9B%E5%9B%9D&city_limit=false&output=json&ak=' + encodeURIComponent(CFG.baidu) + '&callback=' + cb;
+    '&region=%E5%85%A8%E5%9B%BD&city_limit=false&output=json&ak=' + encodeURIComponent(CFG.baidu) + '&callback=' + cb;
   s.onerror = function () { sug.innerHTML = '<div class="tip">百度接口调用失败，检查 AK 或 Referer 白名单。</div>'; };
   document.head.appendChild(s);
 }
@@ -900,6 +907,7 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', init);
 }
 
+/* 供本地自测使用（浏览器里不会走到） */
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { compute: compute, TYPES: TYPES, visitGrade: GRADE_TXT };
 }
