@@ -222,10 +222,11 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
         </div>
         <div class="field">
           <label for="fArea">使用面积（㎡）<span class="req">必填</span></label>
-          <input type="number" id="fArea" inputmode="decimal" placeholder="例：150">
+          <input type="number" id="fArea" inputmode="decimal" placeholder="例：90">
         </div>
       </div>
       <div class="unitline" id="unitLine">填了租金和面积，这里会显示每平米每月多少钱，以及和你选的店型比是高还是低。</div>
+      <div class="tip">豫膳煌建议门店 <b>80–100㎡</b> 为最佳。面积偏小会扣分（堂食位和翻台受限），偏大扣更多（多出来的面积只产生租金），明显偏离还会把等级上限压到 C。</div>
 
       <div class="field" style="margin-bottom:0;margin-top:12px">
         <label>门店硬件条件（能确认几项勾几项，不勾不扣分）</label>
@@ -339,8 +340,9 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
     <div class="card">
       <h2>这个工具怎么算分</h2>
       <div class="tip" style="margin:0">
-        六个维度，合计 100 分：客流 30、周边业态 20、租金单价 20、竞品环境 10、门店硬件 10、门头可见度 10。
-        另外有三条硬规则会直接把等级往下压一档：缺排烟且没有明火、缺上下水、租金单价超过店型基准 1.5 倍同时客流偏弱。
+        六个维度，合计 100 分：客流 30、周边业态 20、租金单价 20、竞品环境 10、门店硬件 10、门头可见度 10。<br>
+        面积按最佳区间校正：标准店 80–100㎡、早餐档口 40–70㎡，偏离一档扣 6 分、明显偏离扣 12 分，并把等级上限压到 B 或 C。<br>
+        另外有三条硬规则会直接把等级往下压一档：缺排烟且没有明火、缺上下水、租金单价超过店型基准 1.5 倍同时客流偏弱。<br>
         分数只做初筛，签约前一定要去现场蹲点。
       </div>
     </div>
