@@ -1,5 +1,5 @@
 /* ============ 日志 ============ */
-const LOG_TAG={in:['入库','tag ok'],out:['领用','tag'],check:['盘点','tag gray'],custom:['自购','tag gray'],daily:['日报','tag gray'],cost:['成本','tag gray']};
+const LOG_TAG={in:['入库','tag ok'],out:['领用','tag out'],check:['盘点','tag gray'],custom:['自购','tag gray'],rename:['改名','tag gray'],daily:['日报','tag gray'],cost:['成本','tag gray']};
 function renderLog(){
   const box=$('logList'); if(!box)return;
   const f=($('lgType')&&$('lgType').value)||'全部';
@@ -56,12 +56,12 @@ function expCsv(){
 }
 function expCk(){
   if(!S.checks.length){toast('还没有盘点记录');return;}
-  const head=['盘点日期','原料','单位','账面','实盘','差异','差异金额'];
+  const head=['类型','盘点日期','时间','原料','单位','账面','实盘','差异','差异金额'];
   const rows=[];
   S.checks.forEach(c=>c.rows.forEach(r=>{
     const d2=Math.round((r.real-r.book)*100)/100;
     const a=(r.price==null)?'':Math.round(d2*r.price*100)/100;
-    rows.push([c.date,r.n,r.unit,r.book,r.real,d2,a]);
+    rows.push([c.type==='current'?'当期':'月度',c.date,c.time||'',r.n,r.unit,r.book,r.real,d2,a]);
   }));
   const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店盘点-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出盘点 CSV');
@@ -105,9 +105,10 @@ function switchStockSeg(seg){
   $('seg-stock').hidden=seg!=='stock';
   var list=$('seg-stock-list'); if(list) list.hidden=seg!=='stock';
   $('seg-custom').hidden=seg!=='custom';
-  document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.seg===seg));
+  document.querySelectorAll('.seg-btn[data-seg]').forEach(b=>b.classList.toggle('on',b.dataset.seg===seg));
 }
-document.querySelectorAll('.seg-btn').forEach(b=>b.onclick=()=>switchStockSeg(b.dataset.seg));
+document.querySelectorAll('.seg-btn[data-seg]').forEach(b=>b.onclick=()=>switchStockSeg(b.dataset.seg));
+document.querySelectorAll('.seg-btn[data-ckseg]').forEach(b=>b.onclick=()=>switchCkSeg(b.dataset.ckseg));
 $('btnCk').onclick=saveCheck;
 $('btnCost').onclick=submitCost;
 ['cRent','cWater','cLabor','cLogistics','cOther'].forEach(id=>$(id).oninput=drawCost);
