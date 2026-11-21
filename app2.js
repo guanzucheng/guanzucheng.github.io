@@ -13,7 +13,10 @@ function sumEl(){
 function renderStock(){
   const cat=($('stCat')&&$('stCat').value)||'全部';
   const q=(($('stQ')&&$('stQ').value)||'').trim();
-  const list=itemList().filter(({m})=>(cat==='全部'||(m.cat||'门店自购')===cat)&&(!q||m.n.indexOf(q)>=0));
+  const list=itemList().filter(({m})=>{
+    const ok=cat==='全部'?true:(cat==='待补货'?isLow(m):(m.cat||'门店自购')===cat);
+    return ok&&(!q||m.n.indexOf(q)>=0);
+  });
   list.sort((a,b)=>{
     const aHas=a.m.stock!=null, bHas=b.m.stock!=null;
     if(aHas!==bHas) return aHas?-1:1;
@@ -21,7 +24,7 @@ function renderStock(){
     return 0;
   });
   const box=$('stockList');
-  if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
+  if(!list.length){box.innerHTML='<div class="mini">'+(cat==='待补货'?'当前没有需要补货的原料':'没有匹配的原料')+'</div>';}
   else box.innerHTML=list.map(({key,m})=>{
     const unit=m.unit||'';
     const low=isLow(m);
@@ -76,7 +79,7 @@ function matchCombo(kw){
   kw=(kw||'').trim().toLowerCase();
   const cat=($('stCat')&&$('stCat').value)||'全部';
   return itemList().filter(({m})=>{
-    if(cat!=='全部'&&(m.cat||'门店自购')!==cat) return false;
+    if(cat!=='全部'&&cat!=='待补货'&&(m.cat||'门店自购')!==cat) return false;
     if(!kw) return true;
     return m.n.toLowerCase().indexOf(kw)>=0;
   });
