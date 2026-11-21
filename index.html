@@ -108,6 +108,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <button data-view="stock">库存<span class="nav-badge" id="stockBadge" hidden></span></button>
     <button data-view="check">盘点</button>
     <button data-view="record">历史记录</button>
+    <button data-view="card">成本卡</button>
     <button data-view="cost">运营成本</button>
     <button data-view="log">操作日志</button>
     <button data-view="setting">设置</button>
@@ -249,6 +250,13 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
 </section>
 
+<!-- ===== 视图：成本卡 ===== -->
+<section id="view-card" hidden>
+  <h1 class="title">成本卡<span>每碗用料、成本与真实毛利</span></h1>
+  <div class="note">先放了总部核算的胡辣汤成本卡；单价是参考进价，门店按当地实际进价改一下，再填上售价，每碗成本、毛利和毛利率会自动算。数据只存在这台设备。</div>
+  <div class="card" id="cardBox"></div>
+</section>
+
 <!-- ===== 视图：运营成本 ===== -->
 <section id="view-cost" hidden>
   <h1 class="title">运营成本<span>固定开支，按 65% 毛利率算每天保本营业额</span></h1>
@@ -363,9 +371,9 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="app1.js?v=20261121k"></script>
+<script src="app1.js?v=20261121r"></script>
 <script src="app2.js?v=20261121q"></script>
 <script src="app3.js?v=20261121o"></script>
-<script src="app4.js?v=20261121m"></script>
+<script src="app4.js?v=20261121r"></script>
 </body>
 </html>
