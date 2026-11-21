@@ -108,12 +108,13 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMont
 function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,property:null,water:null,labor:null,margin:65}, mig:'u3'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, mig:'u3'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];
-  o.cost=o.cost||{rent:null,property:null,water:null,labor:null,margin:65};
+  o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:65};
   o.cost.margin=(o.cost.margin==null?65:o.cost.margin);
+  if(o.cost.property!=null){o.cost.rent=(o.cost.rent||0)+o.cost.property;delete o.cost.property;}
   const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
   o.materials=mergeMaterials(o.materials);
   /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
@@ -205,19 +206,20 @@ function submitDaily(){
 /* ============ 运营成本与盈亏平衡 ============ */
 function costNum(id){const v=Number($(id).value);return isNaN(v)?0:v;}
 function costCalc(){
-  const rent=costNum('cRent'), property=costNum('cProperty'), water=costNum('cWater'), labor=costNum('cLabor');
+  const rent=costNum('cRent'), water=costNum('cWater'), labor=costNum('cLabor'), logistics=costNum('cLogistics'), other=costNum('cOther');
   const margin=65;
-  const fixed=Math.round((rent+property+water+labor)*100)/100;
+  const fixed=Math.round((rent+water+labor+logistics+other)*100)/100;
   const m=margin/100;
   const beMonth=m>0?Math.round(fixed/m*100)/100:0;
   const beDay=Math.round(beMonth/30*100)/100;
-  return {rent,property,water,labor,margin,fixed,beMonth,beDay};
+  return {rent,water,labor,logistics,other,margin,fixed,beMonth,beDay};
 }
 function renderCost(){
   $('cRent').value=S.cost.rent!=null?S.cost.rent:'';
-  $('cProperty').value=S.cost.property!=null?S.cost.property:'';
   $('cWater').value=S.cost.water!=null?S.cost.water:'';
   $('cLabor').value=S.cost.labor!=null?S.cost.labor:'';
+  $('cLogistics').value=S.cost.logistics!=null?S.cost.logistics:'';
+  $('cOther').value=S.cost.other!=null?S.cost.other:'';
   drawCost();
 }
 function drawCost(){
@@ -228,8 +230,8 @@ function drawCost(){
      <div class="item"><div class="nm">日均盈亏平衡点</div><div class="val" style="color:var(--accent)">${money(c.beDay)} 元 / 天</div></div>`;
 }
 function submitCost(){
-  const rent=costNum('cRent'), property=costNum('cProperty'), water=costNum('cWater'), labor=costNum('cLabor');
-  S.cost={rent:rent||null,property:property||null,water:water||null,labor:labor||null,margin:65};
-  logAdd('cost','更新月度成本设置','房租 '+money(rent)+' · 物业 '+money(property)+' · 水电 '+money(water)+' · 人工 '+money(labor));
+  const rent=costNum('cRent'), water=costNum('cWater'), labor=costNum('cLabor'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  S.cost={rent:rent||null,water:water||null,labor:labor||null,logistics:logistics||null,other:other||null,margin:65};
+  logAdd('cost','更新月度成本设置','房租（含物业） '+money(rent)+' · 水电 '+money(water)+' · 人工 '+money(labor)+' · 物流 '+money(logistics)+' · 其它 '+money(other));
   save(); drawCost(); toast('已保存成本设置');
 }
