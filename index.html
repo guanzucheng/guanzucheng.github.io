@@ -31,7 +31,7 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(251,249,245,.95);bac
 .mh-sub{background:var(--brand-orange);color:#fff;font-size:20px;font-weight:800;border-radius:8px;padding:4px 14px;letter-spacing:2px}
 .top-in{max-width:860px;margin:0 auto;padding:11px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .seg{display:flex;gap:8px;margin:14px 0 0}
-.seg-btn{flex:1;font:inherit;font-weight:600;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:8px;cursor:pointer}
+.seg-btn{flex:1;font:inherit;font-weight:600;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:8px;cursor:pointer;position:relative}
 .seg-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.5px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--brand-yellow)}
@@ -43,7 +43,9 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 textarea{resize:vertical;min-height:64px}
 nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(251,249,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
 .tabs-in{max-width:860px;margin:0 auto;padding:0 10px;display:flex}
-.tabs-in button{font:inherit;background:none;border:0;padding:11px 15px;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs-in button{font:inherit;background:none;border:0;padding:11px 15px;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;position:relative}
+.nav-badge{position:absolute;top:3px;right:0;min-width:16px;height:16px;border-radius:99px;background:var(--warn);color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;line-height:1}
+.nav-badge.dot{min-width:8px;height:8px;padding:0;right:5px;top:5px}
 .tabs-in button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:14px 0}
 .card h2{font-size:16px;margin:0 0 4px}
@@ -61,6 +63,13 @@ nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(251,249,245,.95);ba
 .tag.gray{background:#f0f3f0;color:var(--ink-2)}
 .tag.ok{background:#e3f1e8;color:var(--ok)}
 .tag.warn{background:#fbecea;color:var(--warn)}
+.tag.out{background:var(--warn);color:#fff}
+.ck-hist-diffs{margin-top:6px;display:grid;gap:4px}
+.ck-diff-row{display:flex;gap:8px;align-items:center;font-size:12.5px;flex-wrap:wrap}
+.ck-diff-row .dn{font-weight:600;min-width:92px}
+.ck-diff-row .up{color:var(--ok);font-weight:600}
+.ck-diff-row .down{color:var(--warn);font-weight:600}
+.ck-diff-row .amt{color:var(--ink-3)}
 .list{display:grid;gap:8px}
 .item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
 .item:last-child{border-bottom:0}
@@ -95,11 +104,11 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
   <nav class="tabs"><div class="tabs-in">
     <button data-view="daily" class="on">今日日报</button>
-    <button data-view="stock">库存</button>
-    <button data-view="check">月度盘点</button>
+    <button data-view="stock">库存<span class="nav-badge" id="stockBadge" hidden></span></button>
+    <button data-view="check">盘点</button>
     <button data-view="record">历史记录</button>
-    <button data-view="log">操作日志</button>
     <button data-view="cost">运营成本</button>
+    <button data-view="log">操作日志</button>
     <button data-view="setting">设置</button>
   </div></nav>
 </header>
@@ -161,6 +170,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <h2>库存账</h2>
     <p class="hint">按品类筛选、按名字搜；右边是单价（按该原料的单位），改一下金额自动重算；预警线填最低留货量，账面低于它会标红提醒补货</p>
     <div id="stLow" class="mini" style="margin-bottom:10px"></div>
+    <div id="stLowList" class="list" style="margin-bottom:10px"></div>
     <div class="row two" style="margin-bottom:10px">
       <input type="text" id="stQ" placeholder="搜原料名，例如 木耳">
       <select id="stCat">
@@ -190,11 +200,16 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <!-- ===== 视图：月度盘点 ===== -->
 <section id="view-check" hidden>
-  <h1 class="title">月度盘点<span>账实对不对，一眼看见</span></h1>
+  <h1 class="title">盘点<span>账实对不对，一眼看见</span></h1>
+  <div class="seg">
+    <button type="button" class="seg-btn on" data-ckseg="month">月度盘点<span class="nav-badge dot" id="ckMonthBadge" hidden></span></button>
+    <button type="button" class="seg-btn" data-ckseg="current">当期盘点</button>
+  </div>
   <div class="card">
     <h2 id="ckTitle">本月盘点</h2>
+    <div id="ckCurTime" class="mini" style="margin-bottom:8px"></div>
     <p class="hint">填实盘数，系统自动算差异；填过单价的原料还会同时算出差异金额</p>
-    <div class="row">
+    <div class="row" id="ckMonthOnly">
       <div class="field"><label>盘点日期（错过月底可补选上月最后一天）</label><input type="date" id="ckDate"></div>
     </div>
     <div class="row two" style="margin-top:10px">
@@ -213,6 +228,10 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
         <input type="text" id="ckQ" placeholder="例如 木耳 / 粉条 / 打包">
       </div>
     </div>
+    <div class="bar" style="margin-top:10px">
+      <button type="button" class="seg-btn" id="ckDiffBtn" data-diff="1" style="flex:0 1 auto;padding:7px 12px">只看差异</button>
+      <span class="mini" id="ckDiffCount"></span>
+    </div>
     <div style="overflow-x:auto;margin-top:12px">
       <table>
         <colgroup><col style="width:30%"><col style="width:14%"><col style="width:17%"><col style="width:17%"><col style="width:22%"></colgroup>
@@ -220,11 +239,11 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
         <tbody id="ckBody"></tbody>
       </table>
     </div>
-    <div style="margin-top:12px"><button class="btn" id="btnCk" type="button">保存本月盘点</button></div>
+    <div style="margin-top:12px"><button class="btn" id="btnCk" type="button">保存盘点</button></div>
     <p class="hint" style="margin-top:10px" id="ckDiff">已填 0 项</p>
   </div>
   <div class="card">
-    <h2>历月盘点</h2>
+    <h2>盘点记录</h2>
     <div class="list" id="ckHistory"></div>
   </div>
 </section>
@@ -343,9 +362,9 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="app1.js?v=20261121j"></script>
-<script src="app2.js?v=20261121k"></script>
-<script src="app3.js?v=20261118i"></script>
-<script src="app4.js?v=20261121b"></script>
+<script src="app1.js?v=20261121k"></script>
+<script src="app2.js?v=20261121p"></script>
+<script src="app3.js?v=20261121o"></script>
+<script src="app4.js?v=20261121m"></script>
 </body>
 </html>
