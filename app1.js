@@ -98,6 +98,7 @@ function mergeMaterials(arr){
     if(!o) return out;
     if(o.stock!=null) out.stock=o.stock;
     if(o.price!=null) out.price=o.price;
+    if(o.low!=null) out.low=o.low;
     return out;
   });
 }
@@ -149,13 +150,16 @@ function stockTotal(){
   itemList().forEach(({m})=>{const a=amtOf(m); if(a!=null){sum+=a;filled++;}});
   return {sum:Math.round(sum*100)/100, filled};
 }
+/* 预警红线：已建账且填了预警线，账面 ≤ 预警线即偏低 */
+function isLow(m){return m.stock!=null&&m.low!=null&&!isNaN(Number(m.low))&&m.stock<=Number(m.low);}
+function lowCount(){return itemList().filter(({m})=>isLow(m)).length;}
 
 /* 页面上的项数文案跟着清单走，增删物料后不会对不上 */
 function syncCopy(){
   const c={}; MATERIALS.forEach(m=>c[m.cat]=(c[m.cat]||0)+1);
   const t=c['食材原料']||0, p=c['包装物料']||0, ot=c['其它']||0, n=MATERIALS.length;
   const note=document.querySelector('#view-stock .note');
-  if(note)note.textContent='预置总部报货表全部 '+n+' 项原料（食材 '+t+' · 包装 '+p+' · 其它 '+ot+'，食材统一按斤），首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。';
+  if(note)note.textContent='首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。';
   const sel=$('ckCat');
   if(sel&&sel.options.length>=5){
     sel.options[0].text='食材原料（'+t+' 项）';
