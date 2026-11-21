@@ -109,6 +109,7 @@ function switchStockSeg(seg){
 }
 document.querySelectorAll('.seg-btn[data-seg]').forEach(b=>b.onclick=()=>switchStockSeg(b.dataset.seg));
 document.querySelectorAll('.seg-btn[data-ckseg]').forEach(b=>b.onclick=()=>switchCkSeg(b.dataset.ckseg));
+document.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>toggleCkDiff());
 $('btnCk').onclick=saveCheck;
 $('btnCost').onclick=submitCost;
 ['cRent','cWater','cLabor','cLogistics','cOther'].forEach(id=>$(id).oninput=drawCost);
