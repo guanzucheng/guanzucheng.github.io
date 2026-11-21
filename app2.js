@@ -111,7 +111,7 @@ function bindRename(box){
 function renderLowBanner(){
   const n=lowCount();
   const badge=$('stockBadge');
-  if(badge){ badge.hidden=!(n>0); if(n>0)badge.textContent=n; }
+  if(badge){ badge.hidden=!(n>0); badge.textContent=n>0?n:''; }
   const el=$('stLow'); if(!el)return;
   el.innerHTML=n>0
     ? '<span style="color:var(--warn);font-weight:600">待补货 '+n+' 项</span><span class="mini" style="margin-left:8px">账面已低于预警线，建议尽快进货</span>'
