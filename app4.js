@@ -101,6 +101,12 @@ $('fDate').onchange=loadDailyForm;
 $('ckDate').onchange=()=>{$('ckTitle').textContent=ckTitleFor($('ckDate').value);};
 $('btnStock').onclick=stockApply;
 $('btnAddCustom').onclick=addCustom;
+function switchStockSeg(seg){
+  $('seg-stock').hidden=seg!=='stock';
+  $('seg-custom').hidden=seg!=='custom';
+  document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.seg===seg));
+}
+document.querySelectorAll('.seg-btn').forEach(b=>b.onclick=()=>switchStockSeg(b.dataset.seg));
 $('btnCk').onclick=saveCheck;
 $('btnCost').onclick=submitCost;
 ['cRent','cWater','cLabor','cLogistics','cOther'].forEach(id=>$(id).oninput=drawCost);
