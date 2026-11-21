@@ -13,8 +13,8 @@ function sumEl(){
 function renderStock(){
   const cat=($('stCat')&&$('stCat').value)||'全部';
   const q=(($('stQ')&&$('stQ').value)||'').trim();
-  const list=itemList().filter(({m})=>{
-    const ok=cat==='全部'?true:(cat==='待补货'?isLow(m):(m.cat||'门店自购')===cat);
+  const list=itemList().filter(({key,m})=>{
+    const ok=cat==='全部'?true:(cat==='待补货'?remindLow(key,m):(m.cat||'门店自购')===cat);
     return ok&&(!q||m.n.indexOf(q)>=0);
   });
   list.sort((a,b)=>{
@@ -27,7 +27,7 @@ function renderStock(){
   if(!list.length){box.innerHTML='<div class="mini">'+(cat==='待补货'?'当前没有需要补货的原料':'没有匹配的原料')+'</div>';}
   else box.innerHTML=list.map(({key,m})=>{
     const unit=m.unit||'';
-    const low=isLow(m);
+    const low=remindLow(key,m);
     const stockTxt=m.stock==null?'—':(m.stock+' '+unit);
     const a=amtOf(m);
     const amtTxt=a==null?'金额 —':('金额 '+money(a)+' 元');
@@ -58,6 +58,24 @@ function renderStock(){
   refreshCombo();
   renderStockTotal();
   renderLowBanner();
+  renderLowList();
+}
+function renderLowList(){
+  const box=$('stLowList'); if(!box)return;
+  const rows=itemList().filter(({key,m})=>remindLow(key,m));
+  if(!rows.length){box.innerHTML='';return;}
+  box.innerHTML=rows.map(({key,m})=>{
+    const unit=m.unit||'';
+    const lowLine=m.low==null?'—':(m.low+' '+unit);
+    const info='（账面 '+m.stock+' '+unit+' · 预警线 '+lowLine+'）';
+    return '<div class="item" style="background:#fdf3f1;border-radius:8px;padding-left:8px;padding-right:8px"><div style="flex:1;min-width:0"><div class="nm">'+m.n+' <span class="mini" style="color:var(--ink-3);font-weight:400">'+info+'</span></div></div><button type="button" class="btn plain restockBtn" data-key="'+key+'" style="width:auto;flex:0 0 auto;padding:5px 10px;font-size:12.5px;color:var(--accent);border-color:var(--accent)">已补货</button></div>';
+  }).join('');
+  box.querySelectorAll('.restockBtn').forEach(b=>{
+    b.onclick=()=>{
+      S.ackLow[b.dataset.key]=true;
+      save(); renderStock(); toast('已标记补货，该提醒已消除');
+    };
+  });
 }
 function bindRename(box){
   box.querySelectorAll('.nmEdit').forEach(btn=>{
@@ -146,6 +164,7 @@ function stockApply(){
   const isIn=$('sType').value==='in';
   if(!isIn&&cur-q<0){toast('库存不够，不能出这么多');return;}
   m.stock=Math.round((isIn?cur+q:cur-q)*100)/100;
+  delete S.ackLow[selItemKey];
   const a=amtOf(m);
   logAdd(isIn?'in':'out',q+' '+(m.unit||'')+' '+m.n,'账面 '+m.stock+' '+(m.unit||'')+(a!=null?(' · 金额 '+money(a)+' 元'):''));
   save(); $('sQty').value=''; if($('stQ').value)$('stQ').value='';
@@ -161,6 +180,7 @@ function renderCustom(){
   box.innerHTML=S.custom.map((c,i)=>'<div class="item"><div><div class="nm">'+c.n+'</div><div class="sub">'+(c.unit||'')+' · 账面 '+(c.stock==null?'未建账':c.stock)+'</div></div><button class="btn plain" data-del="'+i+'" type="button">删除</button></div>').join('');
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
     const gone=S.custom[Number(b.dataset.del)];
+    delete S.ackLow['C'+Number(b.dataset.del)];
     S.custom.splice(Number(b.dataset.del),1);
     logAdd('custom','删除 '+(gone?gone.n:'—'),'');
     save(); renderCustom(); renderStock(); toast('已删除');
