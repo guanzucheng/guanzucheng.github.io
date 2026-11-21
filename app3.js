@@ -38,6 +38,7 @@ function expStock(){
 
 /* ============ 盘点 ============ */
 let ckRows=[];
+let ckSeg='month';
 function ckVisible(){
   const cat=($('ckCat')&&$('ckCat').value)||'食材原料';
   const q=(($('ckQ')&&$('ckQ').value)||'').trim().toLowerCase();
@@ -49,9 +50,29 @@ function ckVisible(){
   });
 }
 function ckTitleFor(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '本月盘点';return `${d.getFullYear()} 年 ${d.getMonth()+1} 月盘点`;}
+function refreshCkSegUI(){
+  const isCur=ckSeg==='current';
+  document.querySelectorAll('[data-ckseg]').forEach(b=>b.classList.toggle('on',b.dataset.ckseg===ckSeg));
+  const mo=$('ckMonthOnly'); if(mo)mo.hidden=isCur;
+  const ct=$('ckCurTime');
+  if(isCur){
+    const now=new Date();
+    $('ckTitle').textContent='当期盘点';
+    if(ct)ct.textContent='盘点时间：'+todayStrOf(now)+' '+pad2(now.getHours())+':'+pad2(now.getMinutes());
+  }else{
+    $('ckTitle').textContent=ckTitleFor($('ckDate').value);
+    if(ct)ct.textContent='';
+  }
+}
+function switchCkSeg(seg){
+  ckSeg=seg;
+  refreshCkSegUI();
+  rebuildCheck();
+  drawCheck();
+}
 function renderCheck(){
   if(!$('ckDate').value)$('ckDate').value=todayStr();
-  $('ckTitle').textContent=ckTitleFor($('ckDate').value);
+  refreshCkSegUI();
   rebuildCheck();
   drawCheck();
 }
@@ -114,18 +135,25 @@ function updateCkTotal(){
 function saveCheck(){
   const filled=ckRows.filter(r=>r.real!=null&&r.real!=='');
   if(!filled.length){toast('还没填实盘数');return;}
-  const cdate=$('ckDate').value||todayStr();
-  S.checks.push({date:cdate,rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real,price:r.price==null?null:r.price}))});
+  const isCur=ckSeg==='current';
+  const now=new Date();
+  const cdate=isCur?todayStrOf(now):($('ckDate').value||todayStr());
+  const rec={date:cdate,type:isCur?'current':'month',rows:filled.map(r=>({n:r.n,unit:r.unit,book:r.book==null?0:r.book,real:r.real,price:r.price==null?null:r.price}))};
+  if(isCur){rec.at=now.getTime();rec.time=pad2(now.getHours())+':'+pad2(now.getMinutes());}
+  S.checks.push(rec);
   const diff=filled.reduce((a,r)=>a+Math.abs((r.real==null?0:r.real)-(r.book==null?0:r.book)),0);
-  logAdd('check',filled.length+' 项已盘','差异合计 '+Math.round(diff*100)/100);
-  save(); renderCkHistory(); toast('盘点已保存（'+cdate+'）');
+  logAdd('check',(isCur?'当期':'月度')+'盘点 '+filled.length+' 项已盘','差异合计 '+Math.round(diff*100)/100);
+  save(); renderCkHistory(); toast(isCur?('当期盘点已保存（'+cdate+' '+rec.time+'）'):('盘点已保存（'+cdate+'）'));
 }
 function renderCkHistory(){
   const box=$('ckHistory');
   if(!S.checks.length){box.innerHTML='<div class="mini">还没有盘点记录</div>';return;}
   box.innerHTML=S.checks.slice().reverse().map(c=>{
+    const isCur=c.type==='current';
     const diff=c.rows.reduce((a,r)=>a+Math.abs(r.real-r.book),0);
     let amt=0; c.rows.forEach(r=>{if(r.price!=null)amt+=Math.abs((r.real-r.book)*r.price);});
-    return `<div class="item"><div><div class="nm">${c.date}</div><div class="sub">${c.rows.length} 项</div></div><div class="val" style="text-align:right">差异量 ${Math.round(diff*100)/100}<div class="sub" style="font-weight:400">${amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —'}</div></div></div>`;
+    const when=isCur?(c.date+(c.time?(' '+c.time):'')):c.date;
+    const tag=isCur?'<span class="tag gray" style="margin-left:6px">当期</span>':'<span class="tag gray" style="margin-left:6px">月度</span>';
+    return `<div class="item"><div><div class="nm">${when}${tag}</div><div class="sub">${c.rows.length} 项</div></div><div class="val" style="text-align:right">差异量 ${Math.round(diff*100)/100}<div class="sub" style="font-weight:400">${amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —'}</div></div></div>`;
   }).join('');
 }
