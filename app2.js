@@ -36,7 +36,7 @@ function renderStock(){
     const lowTag=low?'<span class="tag warn" style="margin-left:6px">补货</span>':'';
     const stockBox=low?'border-color:var(--warn);color:var(--warn);background:#fbecea':'border:1px solid var(--line);background:#fff';
     const rowBg=low?'background:#fdf3f1;border-radius:8px;padding-left:8px;padding-right:8px':'';
-    return '<div class="item" style="'+rowBg+'"><div style="flex:1;min-width:0"><div class="nm">'+m.n+lowTag+'</div><div class="sub">'+(m.cat||'门店自购')+' · '+tag+'</div><div class="sub" style="margin-top:3px;color:var(--ink-2);font-variant-numeric:tabular-nums">'+amtTxt+'</div></div><div style="text-align:right;min-width:122px"><div style="display:inline-block;min-width:74px;padding:5px 10px;border-radius:8px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;'+stockBox+'">'+stockTxt+'</div><div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>单价</span><input type="number" class="prIn" data-key="'+key+'" value="'+(m.price==null?'':m.price)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>元/'+unit+'</span></div>'+lowRow+'</div></div>';
+    return '<div class="item" style="'+rowBg+'"><div style="flex:1;min-width:0"><div class="nm" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="nmTxt">'+m.n+'</span>'+lowTag+'<button type="button" class="btn plain nmEdit" data-key="'+key+'" style="width:auto;padding:2px 8px;font-size:12px">改名</button></div><div class="sub">'+(m.cat||'门店自购')+' · '+tag+'</div><div class="sub" style="margin-top:3px;color:var(--ink-2);font-variant-numeric:tabular-nums">'+amtTxt+'</div></div><div style="text-align:right;min-width:122px"><div style="display:inline-block;min-width:74px;padding:5px 10px;border-radius:8px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;'+stockBox+'">'+stockTxt+'</div><div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>单价</span><input type="number" class="prIn" data-key="'+key+'" value="'+(m.price==null?'':m.price)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>元/'+unit+'</span></div>'+lowRow+'</div></div>';
   }).join('');
   box.querySelectorAll('.prIn').forEach(inp=>{
     inp.onchange=()=>{
@@ -54,9 +54,41 @@ function renderStock(){
       save(); renderStock();
     };
   });
+  bindRename(box);
   refreshCombo();
   renderStockTotal();
   renderLowBanner();
+}
+function bindRename(box){
+  box.querySelectorAll('.nmEdit').forEach(btn=>{
+    btn.onclick=()=>{
+      const key=btn.dataset.key;
+      const m=findItem(key); if(!m)return;
+      const nmRow=btn.closest('.nm');
+      const span=nmRow.querySelector('.nmTxt');
+      const old=m.n;
+      const inp=document.createElement('input');
+      inp.type='text'; inp.value=old;
+      inp.style='font:inherit;font-weight:600;padding:4px 8px;border:1px solid var(--line);border-radius:8px;width:100%';
+      span.replaceWith(inp); btn.style.display='none';
+      inp.focus(); inp.select();
+      let done=false;
+      const commit=()=>{
+        if(done)return; done=true;
+        const nv=inp.value.trim();
+        if(!nv){toast('名称不能为空');renderStock();return;}
+        if(nv!==old&&itemList().some(({key:k,m:it})=>k!==key&&it.n===nv)){toast('这个名称已经有了');renderStock();return;}
+        if(nv!==old){
+          m.n=nv;
+          logAdd('rename','改名：'+old+' → '+nv,'');
+          save();
+        }
+        renderStock();
+      };
+      inp.onblur=commit;
+      inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){inp.value=old;inp.blur();}};
+    };
+  });
 }
 function renderLowBanner(){
   const el=$('stLow'); if(!el)return;
