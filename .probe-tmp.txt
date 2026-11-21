@@ -1,3 +1,0 @@
-line one
-line two with "quote" and backtick `x`
-中文 成本卡
