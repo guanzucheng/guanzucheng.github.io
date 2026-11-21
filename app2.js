@@ -24,11 +24,16 @@ function renderStock(){
   if(!list.length){box.innerHTML='<div class="mini">没有匹配的原料</div>';}
   else box.innerHTML=list.map(({key,m})=>{
     const unit=m.unit||'';
+    const low=isLow(m);
     const stockTxt=m.stock==null?'—':(m.stock+' '+unit);
     const a=amtOf(m);
     const amtTxt=a==null?'金额 —':('金额 '+money(a)+' 元');
     const tag=m.stock==null?'未建账':'已建账';
-    return '<div class="item"><div style="flex:1;min-width:0"><div class="nm">'+m.n+'</div><div class="sub">'+(m.cat||'门店自购')+' · '+tag+'</div><div class="sub" style="margin-top:3px;color:var(--ink-2);font-variant-numeric:tabular-nums">'+amtTxt+'</div></div><div style="text-align:right;min-width:122px"><div style="display:inline-block;min-width:74px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-weight:600;font-variant-numeric:tabular-nums;text-align:center">'+stockTxt+'</div><div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>单价</span><input type="number" class="prIn" data-key="'+key+'" value="'+(m.price==null?'':m.price)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>元/'+unit+'</span></div></div></div>';
+    const lowRow=m.stock==null?'':'<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>预警线</span><input type="number" class="lowIn" data-key="'+key+'" value="'+(m.low==null?'':m.low)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>'+unit+'</span></div>';
+    const lowTag=low?'<span class="tag warn" style="margin-left:6px">补货</span>':'';
+    const stockBox=low?'border-color:var(--warn);color:var(--warn);background:#fbecea':'border:1px solid var(--line);background:#fff';
+    const rowBg=low?'background:#fdf3f1;border-radius:8px;padding-left:8px;padding-right:8px':'';
+    return '<div class="item" style="'+rowBg+'"><div style="flex:1;min-width:0"><div class="nm">'+m.n+lowTag+'</div><div class="sub">'+(m.cat||'门店自购')+' · '+tag+'</div><div class="sub" style="margin-top:3px;color:var(--ink-2);font-variant-numeric:tabular-nums">'+amtTxt+'</div></div><div style="text-align:right;min-width:122px"><div style="display:inline-block;min-width:74px;padding:5px 10px;border-radius:8px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center;'+stockBox+'">'+stockTxt+'</div><div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>单价</span><input type="number" class="prIn" data-key="'+key+'" value="'+(m.price==null?'':m.price)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>元/'+unit+'</span></div>'+lowRow+'</div></div>';
   }).join('');
   box.querySelectorAll('.prIn').forEach(inp=>{
     inp.onchange=()=>{
@@ -38,8 +43,24 @@ function renderStock(){
       save(); renderStock();
     };
   });
+  box.querySelectorAll('.lowIn').forEach(inp=>{
+    inp.onchange=()=>{
+      const m=findItem(inp.dataset.key); if(!m)return;
+      const val=inp.value===''?null:Number(inp.value);
+      m.low=(val==null||isNaN(val))?null:val;
+      save(); renderStock();
+    };
+  });
   refreshCombo();
   renderStockTotal();
+  renderLowBanner();
+}
+function renderLowBanner(){
+  const el=$('stLow'); if(!el)return;
+  const n=lowCount();
+  el.innerHTML=n>0
+    ? '<span style="color:var(--warn);font-weight:600">待补货 '+n+' 项</span><span class="mini" style="margin-left:8px">账面已低于预警线，建议尽快进货</span>'
+    : '<span class="mini">没有低于预警线的原料</span>';
 }
 function renderStockTotal(){
   const el=sumEl(); if(!el)return;
