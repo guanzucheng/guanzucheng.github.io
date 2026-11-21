@@ -179,10 +179,21 @@ function renderCkHistory(){
   if(!S.checks.length){box.innerHTML='<div class="mini">还没有盘点记录</div>';return;}
   box.innerHTML=S.checks.slice().reverse().map(c=>{
     const isCur=c.type==='current';
-    const diff=c.rows.reduce((a,r)=>a+Math.abs(r.real-r.book),0);
-    let amt=0; c.rows.forEach(r=>{if(r.price!=null)amt+=Math.abs((r.real-r.book)*r.price);});
+    const diffRows=c.rows.map(r=>{
+      const d2=Math.round(((r.real==null?0:r.real)-(r.book==null?0:r.book))*100)/100;
+      return {r,d2};
+    }).filter(x=>x.d2!==0);
+    const diff=diffRows.reduce((a,x)=>a+Math.abs(x.d2),0);
+    let amt=0; diffRows.forEach(x=>{if(x.r.price!=null)amt+=Math.abs(x.d2*x.r.price);});
     const when=isCur?(c.date+(c.time?(' '+c.time):'')):c.date;
     const tag=isCur?'<span class="tag gray" style="margin-left:6px">当期</span>':'<span class="tag gray" style="margin-left:6px">月度</span>';
-    return `<div class="item"><div><div class="nm">${when}${tag}</div><div class="sub">${c.rows.length} 项</div></div><div class="val" style="text-align:right">差异量 ${Math.round(diff*100)/100}<div class="sub" style="font-weight:400">${amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —'}</div></div></div>`;
+    const diffHtml=diffRows.length?diffRows.map(x=>{
+      const r=x.r, d2=x.d2, up=d2>0;
+      const word=up?'多了':'少了';
+      const cls=up?'up':'down';
+      const amtTxt=r.price!=null?((d2>0?'+':'-')+money(Math.abs(Math.round(d2*r.price*100)/100))+' 元'):'';
+      return `<div class="ck-diff-row"><span class="dn">${r.n}</span><span class="${cls}">${word} ${Math.abs(d2)} ${r.unit||''}</span>${amtTxt?`<span class="amt">${amtTxt}</span>`:''}</div>`;
+    }).join(''):'<div class="mini">账实相符，无差异</div>';
+    return `<div class="item" style="flex-wrap:wrap"><div style="flex:1;min-width:0"><div class="nm">${when}${tag}</div><div class="sub">${c.rows.length} 项 · 差异 ${diffRows.length} 项</div><div class="ck-hist-diffs">${diffHtml}</div></div><div class="val" style="text-align:right">差异量 ${Math.round(diff*100)/100}<div class="sub" style="font-weight:400">${amt>0?('金额约 '+money(Math.round(amt*100)/100)+' 元'):'金额 —'}</div></div></div>`;
   }).join('');
 }
