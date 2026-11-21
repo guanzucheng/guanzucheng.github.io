@@ -77,14 +77,86 @@ function resetAll(){
   renderAll(); toast('已清空');
 }
 
+/* ============ 成本卡 ============ */
+function cardRowAmt(row){
+  if(row.price!=null && row.qty!=null) return Math.round(row.price*row.qty*1000)/1000;
+  return Math.round((row.amount||0)*1000)/1000;
+}
+function r3(n){return Math.round(n*1000)/1000;}
+function cardStats(card){
+  const bowls=Number(card.bowls)>0?Number(card.bowls):40;
+  const total=card.rows.reduce((a,r)=>a+cardRowAmt(r),0);
+  const unit=total/bowls;
+  const sale=Number(card.sale);
+  const hasSale=card.sale!=null&&!isNaN(sale)&&sale>0;
+  const gross=hasSale?sale-unit:null;
+  const rate=hasSale&&sale>0?gross/sale*100:null;
+  return {bowls,total,unit,sale:hasSale?sale:null,gross,rate};
+}
+function renderCards(){
+  const box=$('cardBox'); if(!box) return;
+  const cards=S.costCards||[];
+  if(!cards.length){box.innerHTML='<div class="mini">还没有成本卡</div>';return;}
+  const card=cards[0];
+  const st=cardStats(card);
+  const rows=card.rows.map((r,i)=>{
+    const amt=cardRowAmt(r);
+    const per=amt/st.bowls;
+    const priceIn=(r.price==null?'':r.price);
+    const qtyIn=(r.qty==null?'':r.qty);
+    return `<tr>
+      <td class="nm">${r.name}</td>
+      <td><input type="number" inputmode="decimal" value="${priceIn}" data-ri="${i}" data-f="price" placeholder="单价"></td>
+      <td><input type="number" inputmode="decimal" value="${qtyIn}" data-ri="${i}" data-f="qty" placeholder="用量"></td>
+      <td>${r3(amt)}</td>
+      <td>${r3(per)}</td>
+    </tr>`;
+  }).join('');
+  const rateHtml=st.rate==null?'<span class="mini">待填售价</span>':`<span class="${st.rate>=0?'tag ok':'tag warn'}">${Math.round(st.rate*10)/10}%</span>`;
+  const grossHtml=st.gross==null?'<span class="mini">待填售价</span>':`${money(st.gross)} 元`;
+  box.innerHTML=`
+    <div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0">${card.name}</h2>
+      <div class="field" style="width:130px"><label>每桶碗数</label><input type="number" id="cardBowls" inputmode="decimal" value="${card.bowls}"></div>
+    </div>
+    <div class="row three" style="margin-top:12px">
+      <div class="item"><div class="nm">单碗成本</div><div class="val">${r3(st.unit)} 元</div></div>
+      <div class="item"><div class="nm">单碗毛利</div><div class="val">${grossHtml}</div></div>
+      <div class="item"><div class="nm">毛利率</div><div class="val">${rateHtml}</div></div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field"><label>建议售价（元 / 碗，自己填）</label><input type="number" id="cardSale" inputmode="decimal" value="${card.sale==null?'':card.sale}" placeholder="例如 8"></div>
+      <div class="field"><label>一桶总成本</label><input type="text" value="${r3(st.total)} 元 / ${st.bowls} 碗" readonly></div>
+    </div>
+    <div style="overflow-x:auto;margin-top:12px">
+      <table>
+        <colgroup><col style="width:26%"><col style="width:20%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
+        <thead><tr><th>原料</th><th>单价(元/斤)</th><th>一桶用量</th><th>一桶金额</th><th>每碗成本</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:10px">单价按当地进价修改；用量是一桶配方参考值；金额与每碗成本自动重算。水等没有单价的项，按一桶固定分摊金额填写。</p>`;
+  $('cardBowls').onchange=()=>{const v=Number($('cardBowls').value);card.bowls=v>0?v:40;save();renderCards();};
+  $('cardSale').onchange=()=>{const v=$('cardSale').value;card.sale=(v===''?null:Number(v));save();renderCards();};
+  box.querySelectorAll('input[data-ri]').forEach(inp=>{
+    inp.onchange=()=>{
+      const ri=Number(inp.dataset.ri),f=inp.dataset.f;
+      const v=inp.value;
+      card.rows[ri][f]=(v===''?null:Number(v));
+      save(); renderCards();
+    };
+  });
+}
+
 /* ============ 路由 ============ */
 function show(view){
   curView=view;
-  ['daily','stock','check','cost','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
+  ['daily','stock','check','card','cost','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
   document.querySelectorAll('.tabs-in button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
   if(view==='daily') renderDaily();
   if(view==='stock'){renderStock();renderCustom();}
   if(view==='check') renderCheck();
+  if(view==='card') renderCards();
   if(view==='cost') renderCost();
   if(view==='record') renderRecords();
   if(view==='log') renderLog();
@@ -93,7 +165,7 @@ function show(view){
 }
 function renderAll(){
   $('shopName').textContent=S.shopName;
-  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderCost(); renderRecords(); renderLog();
+  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderCards(); renderCost(); renderRecords(); renderLog();
 }
 
 $('btnSave').onclick=submitDaily;
@@ -141,6 +213,6 @@ document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dat
 })();
 
 syncCopy();
-window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','cost','record','log','setting'].indexOf(v)>=0)show(v);});
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','card','cost','record','log','setting'].indexOf(v)>=0)show(v);});
 $('shopName').textContent=S.shopName;
 show((location.hash||'#/daily').slice(2)||'daily');
