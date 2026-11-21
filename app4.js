@@ -79,71 +79,96 @@ function resetAll(){
 
 /* ============ 成本卡 ============ */
 function cardRowAmt(row){
+  if(row.amt!=null) return Math.round(row.amt*1000)/1000;
   if(row.price!=null && row.qty!=null) return Math.round(row.price*row.qty*1000)/1000;
-  return Math.round((row.amount||0)*1000)/1000;
+  return 0;
 }
 function r3(n){return Math.round(n*1000)/1000;}
 function cardStats(card){
-  const bowls=Number(card.bowls)>0?Number(card.bowls):40;
-  const total=card.rows.reduce((a,r)=>a+cardRowAmt(r),0);
-  const unit=total/bowls;
+  const batches=Number(card.batches)>0?Number(card.batches):null;
+  const total=card.rows.reduce(function(a,r){return a+cardRowAmt(r);},0);
+  let unit;
+  if(card.edited){
+    unit=batches?total/batches:(card.unitCost!=null?card.unitCost:total);
+  }else{
+    unit=card.unitCost!=null?card.unitCost:(batches?total/batches:total);
+  }
   const sale=Number(card.sale);
   const hasSale=card.sale!=null&&!isNaN(sale)&&sale>0;
   const gross=hasSale?sale-unit:null;
   const rate=hasSale&&sale>0?gross/sale*100:null;
-  return {bowls,total,unit,sale:hasSale?sale:null,gross,rate};
+  return {batches:batches,total:Math.round(total*1000)/1000,unit:Math.round(unit*1000)/1000,sale:hasSale?sale:null,gross:gross,rate:rate};
 }
 function renderCards(){
   const box=$('cardBox'); if(!box) return;
   const cards=S.costCards||[];
   if(!cards.length){box.innerHTML='<div class="mini">还没有成本卡</div>';return;}
-  const card=cards[0];
+  let idx=cards.findIndex(function(c){return c.id===S.costSel;});
+  if(idx<0){idx=0;S.costSel=cards[0].id;}
+  const card=cards[idx];
   const st=cardStats(card);
-  const rows=card.rows.map((r,i)=>{
-    const amt=cardRowAmt(r);
-    const per=amt/st.bowls;
-    const priceIn=(r.price==null?'':r.price);
-    const qtyIn=(r.qty==null?'':r.qty);
-    return `<tr>
-      <td class="nm">${r.name}</td>
-      <td><input type="number" inputmode="decimal" value="${priceIn}" data-ri="${i}" data-f="price" placeholder="单价"></td>
-      <td><input type="number" inputmode="decimal" value="${qtyIn}" data-ri="${i}" data-f="qty" placeholder="用量"></td>
-      <td>${r3(amt)}</td>
-      <td>${r3(per)}</td>
-    </tr>`;
-  }).join('');
-  const rateHtml=st.rate==null?'<span class="mini">待填售价</span>':`<span class="${st.rate>=0?'tag ok':'tag warn'}">${Math.round(st.rate*10)/10}%</span>`;
-  const grossHtml=st.gross==null?'<span class="mini">待填售价</span>':`${money(st.gross)} 元`;
-  box.innerHTML=`
-    <div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <h2 style="margin:0">${card.name}</h2>
-      <div class="field" style="width:130px"><label>每桶碗数</label><input type="number" id="cardBowls" inputmode="decimal" value="${card.bowls}"></div>
-    </div>
-    <div class="row three" style="margin-top:12px">
-      <div class="item"><div class="nm">单碗成本</div><div class="val">${r3(st.unit)} 元</div></div>
-      <div class="item"><div class="nm">单碗毛利</div><div class="val">${grossHtml}</div></div>
-      <div class="item"><div class="nm">毛利率</div><div class="val">${rateHtml}</div></div>
-    </div>
-    <div class="row two" style="margin-top:10px">
-      <div class="field"><label>建议售价（元 / 碗，自己填）</label><input type="number" id="cardSale" inputmode="decimal" value="${card.sale==null?'':card.sale}" placeholder="例如 8"></div>
-      <div class="field"><label>一桶总成本</label><input type="text" value="${r3(st.total)} 元 / ${st.bowls} 碗" readonly></div>
-    </div>
-    <div style="overflow-x:auto;margin-top:12px">
-      <table>
-        <colgroup><col style="width:26%"><col style="width:20%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
-        <thead><tr><th>原料</th><th>单价(元/斤)</th><th>一桶用量</th><th>一桶金额</th><th>每碗成本</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-    <p class="hint" style="margin-top:10px">单价按当地进价修改；用量是一桶配方参考值；金额与每碗成本自动重算。水等没有单价的项，按一桶固定分摊金额填写。</p>`;
-  $('cardBowls').onchange=()=>{const v=Number($('cardBowls').value);card.bowls=v>0?v:40;save();renderCards();};
-  $('cardSale').onchange=()=>{const v=$('cardSale').value;card.sale=(v===''?null:Number(v));save();renderCards();};
-  box.querySelectorAll('input[data-ri]').forEach(inp=>{
-    inp.onchange=()=>{
-      const ri=Number(inp.dataset.ri),f=inp.dataset.f;
-      const v=inp.value;
-      card.rows[ri][f]=(v===''?null:Number(v));
-      save(); renderCards();
+  const unit=card.unit||'份';
+
+  const opts=cards.map(function(c){return '<option value="'+c.id+'"'+(c.id===card.id?' selected':'')+'>'+c.name+'</option>';}).join('');
+
+  let rowsHtml;
+  if(!card.rows.length){
+    rowsHtml='<tr><td colspan="6" class="mini">暂无原料明细，标准单份成本 '+r3(card.unitCost||0)+' 元/'+unit+'</td></tr>';
+  }else{
+    rowsHtml=card.rows.map(function(r,i){
+      const amt=cardRowAmt(r);
+      const per=st.batches?amt/st.batches:null;
+      const priceIn=(r.price==null?'':r.price);
+      const pu=r.pu||'—';
+      const qt=r.qt||(r.qty!=null?r.qty:'—');
+      return '<tr>'+
+        '<td class="nm">'+r.name+'</td>'+
+        '<td><input type="number" inputmode="decimal" value="'+priceIn+'" data-ri="'+i+'" data-f="price" placeholder="单价"></td>'+
+        '<td class="mini">'+pu+'</td>'+
+        '<td class="mini">'+qt+'</td>'+
+        '<td>'+r3(amt)+'</td>'+
+        '<td>'+(per==null?'—':r3(per))+'</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  const rateHtml=st.rate==null?'<span class="mini">待填售价</span>':'<span class="'+(st.rate>=0?'tag ok':'tag warn')+'">'+Math.round(st.rate*10)/10+'%</span>';
+  const grossHtml=st.gross==null?'<span class="mini">待填售价</span>':money(st.gross)+' 元';
+
+  box.innerHTML=
+    '<div class="field" style="margin-bottom:12px"><label>选择产品</label><select id="cardSel">'+opts+'</select></div>'+
+    '<div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">'+
+      '<h2 style="margin:0">'+card.name+'</h2>'+
+      '<span class="mini">'+(card.basis||'')+(card.basis?' · ':'')+'按'+unit+'计</span>'+
+    '</div>'+
+    '<div class="row three" style="margin-top:12px">'+
+      '<div class="item"><div class="nm">单份成本（元/'+unit+'）</div><div class="val">'+r3(st.unit)+'</div></div>'+
+      '<div class="item"><div class="nm">单份毛利</div><div class="val">'+grossHtml+'</div></div>'+
+      '<div class="item"><div class="nm">毛利率</div><div class="val">'+rateHtml+'</div></div>'+
+    '</div>'+
+    '<div class="row two" style="margin-top:10px">'+
+      '<div class="field"><label>售价（元/'+unit+'，自己填）</label><input type="number" id="cardSale" inputmode="decimal" value="'+(card.sale==null?'':card.sale)+'" placeholder="例如 8"></div>'+
+      '<div class="field"><label>一批总成本</label><input type="text" value="'+r3(st.total)+' 元'+(st.batches?' / '+st.batches+' '+unit:'')+'" readonly></div>'+
+    '</div>'+
+    '<div style="overflow-x:auto;margin-top:12px">'+
+      '<table>'+
+        '<colgroup><col style="width:23%"><col style="width:17%"><col style="width:15%"><col style="width:19%"><col style="width:13%"><col style="width:13%"></colgroup>'+
+        '<thead><tr><th>原料</th><th>单价(可调)</th><th>单价单位</th><th>配方用量(固定)</th><th>一批金额</th><th>每份成本</th></tr></thead>'+
+        '<tbody>'+rowsHtml+'</tbody>'+
+      '</table>'+
+    '</div>'+
+    '<p class="hint" style="margin-top:10px">单价按当地进价修改；配方用量与总部保持一致、不可改；金额、单份成本、毛利与毛利率自动重算。水、大料等没有单价的项按固定分摊金额计算。</p>';
+
+  $('cardSel').onchange=function(){S.costSel=$('cardSel').value;save();renderCards();};
+  $('cardSale').onchange=function(){const v=$('cardSale').value;card.sale=(v===''?null:Number(v));save();renderCards();};
+  box.querySelectorAll('input[data-ri]').forEach(function(inp){
+    inp.onchange=function(){
+      const ri=Number(inp.dataset.ri),v=inp.value;
+      const row=card.rows[ri];
+      row.price=(v===''?null:Number(v));
+      if(row.price!=null&&row.qty!=null) row.amt=Math.round(row.price*row.qty*1000)/1000;
+      card.edited=true;
+      save();renderCards();
     };
   });
 }
