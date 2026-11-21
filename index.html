@@ -4,13 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>豫膳煌 门店日报与库存（单机版）</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23b4551c'/%3E%3Cpath d='M9 20h14M11 20v-5a5 5 0 0 1 10 0v5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d823c'/%3E%3Cpath d='M9 20h14M11 20v-5a5 5 0 0 1 10 0v5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E">
 <style>
 :root{
-  --ink:#1d1a17; --ink-2:#5b5450; --ink-3:#8b827c;
-  --line:#e3ded7; --bg:#faf8f5; --card:#fff;
-  --accent:#b4551c; --accent-soft:#f4e7dc;
-  --ok:#2f6b46; --warn:#a8321c;
+  --ink:#1b211c; --ink-2:#55605a; --ink-3:#8a948d;
+  --line:#e2e9e3; --bg:#fbf9f5; --card:#fff;
+  --accent:#1d823c; --accent-soft:#e7f2ea;
+  --ok:#127e37; --warn:#b3402e;
+  --brand-yellow:#f7d908;
   --r:10px;
 }
 *{box-sizing:border-box}
@@ -21,17 +22,17 @@ body{
   font-size:15px; line-height:1.55; -webkit-text-size-adjust:100%;
 }
 .wrap{max-width:860px;margin:0 auto;padding:0 16px 70px;min-width:0}
-header.top{position:sticky;top:0;z-index:20;background:rgba(250,248,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:0;z-index:20;background:rgba(251,249,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .top-in{max-width:860px;margin:0 auto;padding:11px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.5px}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--brand-yellow)}
 .shop{margin-left:auto;font-size:13px;color:var(--ink-2)}
 select,input[type=text],input[type=number],textarea{
   font:inherit;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;
 }
 select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:30px}
 textarea{resize:vertical;min-height:64px}
-nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(250,248,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
+nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(251,249,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap}
 .tabs-in{max-width:860px;margin:0 auto;padding:0 10px;display:flex}
 .tabs-in button{font:inherit;background:none;border:0;padding:11px 15px;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
 .tabs-in button.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
@@ -48,9 +49,9 @@ nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(250,248,245,.95);ba
 .btn.plain{background:#fff;color:var(--ink-2);border-color:var(--line);width:auto;padding:7px 12px;font-weight:500}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
-.tag.gray{background:#f1eeea;color:var(--ink-2)}
-.tag.ok{background:#e7f0ea;color:var(--ok)}
-.tag.warn{background:#fbeae6;color:var(--warn)}
+.tag.gray{background:#f0f3f0;color:var(--ink-2)}
+.tag.ok{background:#e3f1e8;color:var(--ok)}
+.tag.warn{background:#fbecea;color:var(--warn)}
 .list{display:grid;gap:8px}
 .item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)}
 .item:last-child{border-bottom:0}
@@ -66,8 +67,8 @@ nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(250,248,245,.95);ba
 .combo-list .empty{padding:10px 12px;color:var(--ink-3);font-size:13px}
 table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--ink-2);font-weight:600;background:#f7f4f0}
-.note{background:#fdf7f1;border:1px solid #f0dfd0;color:#6f4a2d;border-radius:8px;padding:10px 12px;font-size:12.5px;margin:14px 0}
+th{color:var(--ink-2);font-weight:600;background:#f1f6f2}
+.note{background:#f0f7f1;border:1px solid #cfe6d7;color:#1d6b33;border-radius:8px;padding:10px 12px;font-size:12.5px;margin:14px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
 footer{margin-top:24px;color:var(--ink-3);font-size:12px;text-align:center}
