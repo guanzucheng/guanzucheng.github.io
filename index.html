@@ -11,7 +11,7 @@
   --line:#e2e9e3; --bg:#fbf9f5; --card:#fff;
   --accent:#1d823c; --accent-soft:#e7f2ea;
   --ok:#127e37; --warn:#b3402e;
-  --brand-yellow:#f7d908;
+  --brand-yellow:#f7d908; --brand-orange:#e57232;
   --r:10px;
 }
 *{box-sizing:border-box}
@@ -23,7 +23,13 @@ body{
 }
 .wrap{max-width:860px;margin:0 auto;padding:0 16px 70px;min-width:0}
 header.top{position:sticky;top:0;z-index:20;background:rgba(251,249,245,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.masthead{display:flex;align-items:center;justify-content:center;gap:12px;background:var(--accent);padding:15px 16px;font-weight:800;letter-spacing:3px}
+.mh-brand{color:#fff;font-size:23px}
+.mh-sub{background:var(--brand-orange);color:#fff;font-size:20px;font-weight:800;border-radius:8px;padding:4px 14px;letter-spacing:2px}
 .top-in{max-width:860px;margin:0 auto;padding:11px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:flex;gap:8px;margin:14px 0 0}
+.seg-btn{flex:1;font:inherit;font-weight:600;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:8px;cursor:pointer}
+.seg-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:.5px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--brand-yellow)}
 .shop{margin-left:auto;font-size:13px;color:var(--ink-2)}
@@ -79,6 +85,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <body>
 
 <header class="top">
+  <div class="masthead"><span class="mh-brand">豫膳煌</span><span class="mh-sub">小账本</span></div>
   <div class="top-in">
     <div class="brand"><span class="dot"></span>豫膳煌 · 门店小账本</div>
     <span class="shop" id="shopName">我的门店</span>
@@ -127,8 +134,11 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <section id="view-stock" hidden>
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
   <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。</div>
-  <div class="card">
-    <h2>记一笔</h2>
+  <div class="seg">
+    <button type="button" class="seg-btn on" data-seg="stock">记一笔</button>
+    <button type="button" class="seg-btn" data-seg="custom">自购原料</button>
+  </div>
+  <div class="card" id="seg-stock">
     <div class="row two">
       <div class="field">
         <label>原料（可打字搜索）</label>
@@ -160,8 +170,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="list" id="stockList"></div>
     <div class="mini" id="stVal" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)"></div>
   </div>
-  <div class="card">
-    <h2>门店自购原料</h2>
+  <div class="card" id="seg-custom" hidden>
     <p class="hint">报货表没列的本地货（一次性手套等），在这里自己加，加进来就能一起盘</p>
     <div class="row three">
       <div class="field"><label>名称</label><input type="text" id="cmName" placeholder="例如 一次性手套"></div>
@@ -331,6 +340,6 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <script src="app1.js?v=20261118i"></script>
 <script src="app2.js?v=20261118i"></script>
 <script src="app3.js?v=20261118i"></script>
-<script src="app4.js?v=20261118i"></script>
+<script src="app4.js?v=20261121a"></script>
 </body>
 </html>
