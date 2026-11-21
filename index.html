@@ -219,12 +219,13 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <h1 class="title">运营成本<span>固定开支，按 65% 毛利率算每天保本营业额</span></h1>
   <div class="card">
     <h2>月度固定开支（元 / 月）</h2>
-    <p class="hint">按月填写房租、物业费、水电费、人工费；数字只存在这台设备</p>
+    <p class="hint">按月填写房租（含物业费）、水电费、人工费、物流费及其它开支；数字只存在这台设备</p>
     <div class="row two">
-      <div class="field"><label>房租</label><input type="number" id="cRent" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>物业费</label><input type="number" id="cProperty" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>房租（含物业费）</label><input type="number" id="cRent" inputmode="decimal" placeholder="0"></div>
       <div class="field"><label>水电费</label><input type="number" id="cWater" inputmode="decimal" placeholder="0"></div>
       <div class="field"><label>人工费</label><input type="number" id="cLabor" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>物流费用</label><input type="number" id="cLogistics" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>其它</label><input type="number" id="cOther" inputmode="decimal" placeholder="0"></div>
     </div>
     <div style="margin-top:12px"><button class="btn" id="btnCost" type="button">保存成本设置</button></div>
   </div>
