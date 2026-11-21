@@ -136,7 +136,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：库存 ===== -->
 <section id="view-stock" hidden>
   <h1 class="title">库存<span>入库、领用，账面自己滚</span></h1>
-  <div class="note">预置总部报货表全部 75 项原料（食材 65 · 包装 7 · 其它 3），首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。</div>
+  <div class="note">首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。</div>
   <div class="seg">
     <button type="button" class="seg-btn on" data-seg="stock">记一笔</button>
     <button type="button" class="seg-btn" data-seg="custom">自购原料</button>
@@ -159,7 +159,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
   <div class="card" id="seg-stock-list">
     <h2>库存账</h2>
-    <p class="hint">按品类筛选、按名字搜；右边是单价（按该原料的单位），改一下金额自动重算</p>
+    <p class="hint">按品类筛选、按名字搜；右边是单价（按该原料的单位），改一下金额自动重算；预警线填最低留货量，账面低于它会标红提醒补货</p>
+    <div id="stLow" class="mini" style="margin-bottom:10px"></div>
     <div class="row two" style="margin-bottom:10px">
       <input type="text" id="stQ" placeholder="搜原料名，例如 木耳">
       <select id="stCat">
@@ -341,8 +342,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="app1.js?v=20261118i"></script>
-<script src="app2.js?v=20261118i"></script>
+<script src="app1.js?v=20261121j"></script>
+<script src="app2.js?v=20261121j"></script>
 <script src="app3.js?v=20261118i"></script>
 <script src="app4.js?v=20261121b"></script>
 </body>
