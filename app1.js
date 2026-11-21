@@ -89,3 +89,177 @@ const REF_PRICES={
   '白糖':3.48,'味精':4.1,'纯正香油':18
 };
 function defaultPrice(n){return (REF_PRICES[n]==null?null:REF_PRICES[n]);}
+
+/* 预设成本卡数据见 cards-a.js / cards-b.js，全局变量 PRESET_COST_CARDS */
+
+/* 成本卡旧结构迁移：旧卡 bowls/amount → 新结构 batches/unitCost/rows[].pu/qt/amt */
+function normalizeCostCard(c){
+  if(!c||typeof c!=='object')return c;
+  if(!c.id)c.id='c'+Math.random().toString(36).slice(2,8);
+  if(c.unitCost==null){
+    const bowls=Number(c.bowls)>0?Number(c.bowls):40;
+    c.unit='碗';c.basis='一桶汤 '+bowls+' 碗';c.batches=bowls;
+    c.rows=(c.rows||[]).map(function(r){
+      const amt=(r.amount!=null)?r.amount:((r.price!=null&&r.qty!=null)?Math.round(r.price*r.qty*1000)/1000:0);
+      return {name:r.name,price:r.price,pu:'元/斤',qty:r.qty,qt:(r.qty!=null?r.qty+' 斤':''),amt:amt};
+    });
+    const total=c.rows.reduce(function(a,r){return a+(r.amt||0);},0);
+    c.unitCost=Math.round(total/bowls*1000)/1000;
+  }
+  c.edited=!!c.edited;
+  c.rows=c.rows||[];
+  if(c.sale==null)c.sale=null;
+  return c;
+}
+
+function mergeMaterials(arr){
+  const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
+  return MATERIALS.map(m=>{
+    const o=old[m.n];
+    const out=Object.assign({},m,{price:defaultPrice(m.n)});
+    if(!o) return out;
+    if(o.stock!=null) out.stock=o.stock;
+    if(o.price!=null) out.price=o.price;
+    if(o.low!=null) out.low=o.low;
+    return out;
+  });
+}
+
+const KEY='ysh_local_v2';
+function pad2(n){n=String(n);return n.length<2?'0'+n:n;}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
+function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};
+let S=load();
+function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};
+  o.costCards=Array.isArray(o.costCards)&&o.costCards.length?o.costCards.map(normalizeCostCard):JSON.parse(JSON.stringify(PRESET_COST_CARDS));
+  o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:65};
+  o.cost.margin=(o.cost.margin==null?65:o.cost.margin);
+  if(o.cost.property!=null){o.cost.rent=(o.cost.rent||0)+o.cost.property;delete o.cost.property;}
+  const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
+  o.materials=mergeMaterials(o.materials);
+  /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
+  if(o.mig!=='u3'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u3';saveRaw(o);}
+  return o;}}catch(e){}return seed();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
+
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+function money(n){return String(Math.round(n*100)/100);}
+let curView='daily';
+
+/* ============ 操作日志 ============ */
+function dateOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function hhmm(ts){const d=new Date(ts);return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function logAdd(type,label,detail){
+  S.logs.push({at:Date.now(),type,label,detail:detail||''});
+  if(S.logs.length>800)S.logs=S.logs.slice(-800);
+}
+
+/* ============ 物料与金额 ============ */
+function itemList(){
+  const out=[];
+  S.materials.forEach((m,i)=>out.push({key:'M'+i,m}));
+  S.custom.forEach((c,i)=>out.push({key:'C'+i,m:c}));
+  return out;
+}
+function findItem(key){return key[0]==='M'?S.materials[Number(key.slice(1))]:S.custom[Number(key.slice(1))];}
+function amtOf(m){return (m.price!=null&&m.stock!=null)?Math.round(m.stock*m.price*100)/100:null;}
+function stockTotal(){
+  let sum=0, filled=0;
+  itemList().forEach(({m})=>{const a=amtOf(m); if(a!=null){sum+=a;filled++;}});
+  return {sum:Math.round(sum*100)/100, filled};
+}
+/* 预警红线：已建账且填了预警线，账面 ≤ 预警线即偏低；已确认补货的项暂不提醒 */
+function isLow(m){return m.stock!=null&&m.low!=null&&!isNaN(Number(m.low))&&m.stock<=Number(m.low);}
+function remindLow(key,m){return isLow(m)&&!S.ackLow[key];}
+function lowCount(){return itemList().filter(({key,m})=>remindLow(key,m)).length;}
+
+/* 页面上的项数文案跟着清单走，增删物料后不会对不上 */
+function syncCopy(){
+  const c={}; MATERIALS.forEach(m=>c[m.cat]=(c[m.cat]||0)+1);
+  const t=c['食材原料']||0, p=c['包装物料']||0, ot=c['其它']||0, n=MATERIALS.length;
+  const note=document.querySelector('#view-stock .note');
+  if(note)note.textContent='首次是“未建账”，入库后开始算；已预置总部核算参考单价，入库就自动算出库存金额，门店可以自己改，改过的只存本机。';
+  const sel=$('ckCat');
+  if(sel&&sel.options.length>=5){
+    sel.options[0].text='食材原料（'+t+' 项）';
+    sel.options[1].text='包装物料（'+p+' 项）';
+    sel.options[2].text='其它（'+ot+' 项）';
+    sel.options[4].text='全部（'+n+' 项 + 自购）';
+  }
+}
+
+/* ============ 日报 ============ */
+function dailyWeek(dateStr){const d=new Date(dateStr+'T00:00:00');return isNaN(d.getTime())?'—':weekOf(d);}
+function loadDailyForm(){
+  const date=$('fDate').value||todayStr();
+  $('fWeek').value=dailyWeek(date);
+  const rec=S.records.find(r=>r.date===date);
+  $('fRev').value=rec?rec.revenue:'';
+  $('fWeather').value=rec&&rec.weather!=null?rec.weather:'';
+  $('fNote').value=rec?rec.note||'':'';
+}
+function renderDaily(){
+  if(!$('fDate').value)$('fDate').value=todayStr();
+  $('fDate').max=todayStr();
+  loadDailyForm();
+  renderRecent();
+}
+function renderRecent(){
+  const rows=S.records.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  const box=$('recentList');
+  if(!rows.length){box.innerHTML='<div class="mini">还没有记录，今天填第一条</div>';return;}
+  box.innerHTML=rows.map(r=>{
+    const w=r.weather?(' · 天气 '+r.weather):'';
+    return `<div class="item"><div><div class="nm">${r.date} ${weekLabel(r.date)}</div><div class="sub">${w||'—'}</div></div><div class="val">${money(r.revenue)} 元</div></div>`;
+  }).join('');
+}
+function submitDaily(){
+  const date=$('fDate').value;
+  if(!date){toast('先选营业日期');$('fDate').focus();return;}
+  if(date>todayStr()){toast('不能填未来日期');return;}
+  const rev=Number($('fRev').value);
+  if(!rev||rev<=0){toast('总金额还没填');$('fRev').focus();return;}
+  const rec={date:date,revenue:rev,weather:$('fWeather').value.trim(),note:$('fNote').value.trim()};
+  S.records=S.records.filter(r=>r.date!==date);
+  S.records.push(rec);
+  logAdd('daily','总营业额 '+money(rev)+' 元',(rec.weather?('天气 '+rec.weather):'')+(rec.note?(' · 总结 '+rec.note):''));
+  save(); toast('已保存 '+date+' 的日报'); loadDailyForm(); renderRecent(); renderRecords(); if(curView==='log')renderLog();
+}
+
+/* ============ 运营成本与盈亏平衡 ============ */
+function costNum(id){const v=Number($(id).value);return isNaN(v)?0:v;}
+function costCalc(){
+  const rent=costNum('cRent'), water=costNum('cWater'), labor=costNum('cLabor'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  const margin=65;
+  const fixed=Math.round((rent+water+labor+logistics+other)*100)/100;
+  const m=margin/100;
+  const beMonth=m>0?Math.round(fixed/m*100)/100:0;
+  const beDay=Math.round(beMonth/30*100)/100;
+  return {rent,water,labor,logistics,other,margin,fixed,beMonth,beDay};
+}
+function renderCost(){
+  $('cRent').value=S.cost.rent!=null?S.cost.rent:'';
+  $('cWater').value=S.cost.water!=null?S.cost.water:'';
+  $('cLabor').value=S.cost.labor!=null?S.cost.labor:'';
+  $('cLogistics').value=S.cost.logistics!=null?S.cost.logistics:'';
+  $('cOther').value=S.cost.other!=null?S.cost.other:'';
+  drawCost();
+}
+function drawCost(){
+  const c=costCalc();
+  $('costResult').innerHTML=
+    `<div class="item"><div class="nm">月固定开支合计</div><div class="val">${money(c.fixed)} 元 / 月</div></div>
+     <div class="item"><div class="nm">月保本营业额</div><div class="val">${money(c.beMonth)} 元 / 月</div></div>
+     <div class="item"><div class="nm">日均盈亏平衡点</div><div class="val" style="color:var(--accent)">${money(c.beDay)} 元 / 天</div></div>`;
+}
+function submitCost(){
+  const rent=costNum('cRent'), water=costNum('cWater'), labor=costNum('cLabor'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  S.cost={rent:rent||null,water:water||null,labor:labor||null,logistics:logistics||null,other:other||null,margin:65};
+  logAdd('cost','更新月度成本设置','房租（含物业） '+money(rent)+' · 水电 '+money(water)+' · 人工 '+money(labor)+' · 物流 '+money(logistics)+' · 其它 '+money(other));
+  save(); drawCost(); toast('已保存成本设置');
+}
