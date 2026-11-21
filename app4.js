@@ -103,6 +103,7 @@ $('btnStock').onclick=stockApply;
 $('btnAddCustom').onclick=addCustom;
 function switchStockSeg(seg){
   $('seg-stock').hidden=seg!=='stock';
+  var list=$('seg-stock-list'); if(list) list.hidden=seg!=='stock';
   $('seg-custom').hidden=seg!=='custom';
   document.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.seg===seg));
 }
