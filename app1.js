@@ -90,6 +90,25 @@ const REF_PRICES={
 };
 function defaultPrice(n){return (REF_PRICES[n]==null?null:REF_PRICES[n]);}
 
+/* 预设产品成本卡：单价为总部参考进价，用量为一桶配方；门店可按当地进价改单价，系统自动算金额与毛利率 */
+const PRESET_COST_CARDS=[
+  {id:'c1', name:'牛肉山药胡辣汤', bowls:40, sale:null, rows:[
+    {name:'面筋',price:3,qty:5},
+    {name:'虫草花',price:28,qty:0.05},
+    {name:'木耳',price:32,qty:1},
+    {name:'料油',price:15,qty:0.6},
+    {name:'鸡精',price:15.5,qty:0.12},
+    {name:'味精',price:4.1,qty:0.12},
+    {name:'盐',price:1,qty:0.5},
+    {name:'胡辣汤料',price:43,qty:0.3},
+    {name:'高汤包',price:5.5,qty:1},
+    {name:'淀粉',price:1.9,qty:0.03},
+    {name:'水',price:null,qty:null,amount:0.01},
+    {name:'煮熟牛肉',price:48,qty:1.1},
+    {name:'枸杞',price:26,qty:0.16}
+  ]}
+];
+
 function mergeMaterials(arr){
   const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
   return MATERIALS.map(m=>{
@@ -109,10 +128,11 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMont
 function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, mig:'u3'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};
+  o.costCards=Array.isArray(o.costCards)&&o.costCards.length?o.costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS));
   o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:65};
   o.cost.margin=(o.cost.margin==null?65:o.cost.margin);
   if(o.cost.property!=null){o.cost.rent=(o.cost.rent||0)+o.cost.property;delete o.cost.property;}
