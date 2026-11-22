@@ -251,7 +251,8 @@ function submitDaily(){
 /* ============ 运营成本与盈亏平衡 ============ */
 function costNum(id){const v=Number($(id).value);return isNaN(v)?0:v;}
 function costCalc(){
-  const rent=costNum('cRent'), water=costNum('cWater'), labor=costNum('cLabor'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  const rent=costNum('cRent'), water=costNum('cWater'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  const labor=staffFixedTotal(staffMonth);
   const margin=65;
   const fixed=Math.round((rent+water+labor+logistics+other)*100)/100;
   const m=margin/100;
@@ -262,7 +263,7 @@ function costCalc(){
 function renderCost(){
   $('cRent').value=S.cost.rent!=null?S.cost.rent:'';
   $('cWater').value=S.cost.water!=null?S.cost.water:'';
-  $('cLabor').value=S.cost.labor!=null?S.cost.labor:'';
+  $('cLabor').value=staffFixedTotal(staffMonth);
   $('cLogistics').value=S.cost.logistics!=null?S.cost.logistics:'';
   $('cOther').value=S.cost.other!=null?S.cost.other:'';
   drawCost();
@@ -275,8 +276,9 @@ function drawCost(){
      <div class="item"><div class="nm">日均盈亏平衡点</div><div class="val" style="color:var(--accent)">${money(c.beDay)} 元 / 天</div></div>`;
 }
 function submitCost(){
-  const rent=costNum('cRent'), water=costNum('cWater'), labor=costNum('cLabor'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  const rent=costNum('cRent'), water=costNum('cWater'), logistics=costNum('cLogistics'), other=costNum('cOther');
+  const labor=staffFixedTotal(staffMonth);
   S.cost={rent:rent||null,water:water||null,labor:labor||null,logistics:logistics||null,other:other||null,margin:65};
-  logAdd('cost','更新月度成本设置','房租（含物业） '+money(rent)+' · 水电 '+money(water)+' · 人工 '+money(labor)+' · 物流 '+money(logistics)+' · 其它 '+money(other));
+  logAdd('cost','更新月度成本设置','房租（含物业） '+money(rent)+' · 水电 '+money(water)+' · 人工（人员固定工资） '+money(labor)+' · 物流 '+money(logistics)+' · 其它 '+money(other));
   save(); drawCost(); toast('已保存成本设置');
 }
