@@ -1,12 +1,12 @@
 /* ============ 人员管理（正式工 / 临时工，底薪 + 超额利润提成均分） ============ */
 const STAFF_ROLES=['店长','烧汤师傅','面点师傅','油炸师傅','售卖员','收银','收碗'];
-const ATT_OPTS=[['work','出勤'],['overtime','加班'],['rest','休息'],['leave','请假'],['absent','旷工']];
+const ATT_OPTS=[['work','出勤'],['rest','休息'],['leave','请假'],['absent','旷工']];
 let staffMonth=curMonthStr();
 let attDate=todayStr();
 let editingId=null;
 
 function curMonthStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1);}
-function escStaff(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escStaff(s){return String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function monthRevenue(m){return S.records.filter(r=>r.date&&r.date.indexOf(m)===0).reduce((a,r)=>a+(Number(r.revenue)||0),0);}
 function attendDays(e,m){const d=e.attend||{};let n=0;Object.keys(d).forEach(k=>{if(k.indexOf(m)===0&&(d[k]==='work'||d[k]==='overtime'))n++;});return n;}
 
