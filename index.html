@@ -106,10 +106,11 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <nav class="tabs"><div class="tabs-in">
     <button data-view="daily" class="on">今日日报</button>
     <button data-view="stock">库存<span class="nav-badge" id="stockBadge" hidden></span></button>
-    <button data-view="check">盘点</button>
-    <button data-view="record">历史记录</button>
     <button data-view="card">成本卡</button>
     <button data-view="cost">运营成本</button>
+    <button data-view="staff">人员</button>
+    <button data-view="check">盘点</button>
+    <button data-view="record">历史记录</button>
     <button data-view="log">操作日志</button>
     <button data-view="setting">设置</button>
   </div></nav>
@@ -279,6 +280,72 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
 </section>
 
+<!-- ===== 视图：人员管理 ===== -->
+<section id="view-staff" hidden>
+  <h1 class="title">人员<span>正式工 / 临时工，底薪加提成台账</span></h1>
+  <div class="note">正式工按月底薪＋提成，临时工按日工资×出勤天数＋提成；提成按所选月份营业额×个人提成点数。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
+  <div class="card">
+    <div class="row three" id="staffSummary"></div>
+  </div>
+  <div class="card">
+    <div class="row two">
+      <div class="field"><label>核算月份</label><input type="month" id="staffMonth"></div>
+      <div class="field"><label>当月营业额（取自日报）</label><input type="text" id="staffMonthRev" readonly></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2 id="staffFormTitle">添加人员</h2>
+    <div class="row two">
+      <div class="field"><label>姓名</label><input type="text" id="stName" placeholder="例如 王师傅"></div>
+      <div class="field"><label>岗位</label>
+        <select id="stRole">
+          <option>店长</option><option>厨师</option><option selected>帮工</option><option>收银</option><option>杂工</option><option>临时工</option>
+        </select>
+      </div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field"><label>用工类型</label>
+        <select id="stType"><option value="full">正式工</option><option value="temp">临时工</option></select>
+      </div>
+      <div class="field"><label>状态</label>
+        <select id="stStatus"><option value="on">在职</option><option value="off">离职</option></select>
+      </div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field"><label id="stBaseLabel">月底薪（元/月）</label><input type="number" id="stBase" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>提成点数（%，按当月营业额）</label><input type="number" id="stComm" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="row two" style="margin-top:10px">
+      <div class="field"><label>手机号（可选）</label><input type="text" id="stPhone" placeholder="选填"></div>
+      <div class="field"><label>入职日期（可选）</label><input type="date" id="stStart"></div>
+    </div>
+    <div class="bar" style="margin-top:12px">
+      <button class="btn" id="btnStaffSave" type="button">保存人员</button>
+      <button class="btn plain" id="btnStaffCancel" type="button" hidden>取消编辑</button>
+    </div>
+    <div class="list" id="staffList" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <h2>每日考勤</h2>
+    <div class="row two">
+      <div class="field"><label>日期</label><input type="date" id="attDate"></div>
+      <div class="field"><label>说明</label><input type="text" value="点选当天状态：出勤 / 加班 / 休息 / 请假 / 旷工" readonly></div>
+    </div>
+    <div class="list" id="attBoard" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <h2>工资试算（底薪/日薪＋提成）</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <colgroup><col style="width:24%"><col style="width:13%"><col style="width:19%"><col style="width:13%"><col style="width:15%"><col style="width:16%"></colgroup>
+        <thead><tr><th>姓名</th><th>类型</th><th>计酬基数</th><th>出勤</th><th>提成（元）</th><th>应发（元）</th></tr></thead>
+        <tbody id="payBody"></tbody>
+      </table>
+    </div>
+    <div class="mini" id="paySum" style="margin-top:10px"></div>
+  </div>
+</section>
+
 <!-- ===== 视图：历史记录 ===== -->
 <section id="view-record" hidden>
   <h1 class="title">历史记录<span>日报和盘点的全部留底</span></h1>
@@ -313,6 +380,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
         <option value="custom">只看自购原料</option>
         <option value="daily">只看日报</option>
         <option value="cost">只看成本设置</option>
+        <option value="staff">只看人员</option>
       </select>
       <span class="mini" id="lgCount"></span>
     </div>
@@ -371,11 +439,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261121u"></script>
-<script src="cards-b.js?v=20261121u"></script>
-<script src="app1.js?v=20261121u"></script>
-<script src="app2.js?v=20261121u"></script>
-<script src="app3.js?v=20261121u"></script>
-<script src="app4.js?v=20261121u"></script>
+<script src="cards-a.js?v=20261122v"></script>
+<script src="cards-b.js?v=20261122v"></script>
+<script src="app1.js?v=20261122v"></script>
+<script src="app2.js?v=20261122v"></script>
+<script src="app3.js?v=20261122v"></script>
+<script src="app5.js?v=20261122v"></script>
+<script src="app4.js?v=20261122v"></script>
 </body>
 </html>
