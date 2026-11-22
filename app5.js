@@ -32,6 +32,12 @@ function staffWage(e,m,avgComm){
   const total=Math.round((fixed+comm)*100)/100;
   return {days,fixed,comm,total};
 }
+/* 当月固定工资合计：正式底薪＋临时工日薪×出勤天数（不含提成池），供运营成本页自动取数 */
+function staffFixedTotal(m){
+  const mm=m||staffMonth;
+  const on=S.staff.filter(e=>e.status==='on');
+  return Math.round(on.reduce((a,e)=>a+staffWage(e,mm,0).fixed,0)*100)/100;
+}
 
 function renderStaff(){
   const m=$('staffMonth'); if(m)m.value=staffMonth;
