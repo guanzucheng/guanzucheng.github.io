@@ -288,6 +288,14 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="row three" id="staffSummary"></div>
   </div>
   <div class="card">
+    <h2>每日考勤</h2>
+    <div class="row two">
+      <div class="field"><label>日期</label><input type="date" id="attDate"></div>
+      <div class="field"><label>说明</label><input type="text" value="点选当天状态：出勤 / 休息 / 请假 / 旷工" readonly></div>
+    </div>
+    <div class="list" id="attBoard" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
     <div class="row two">
       <div class="field"><label>核算月份</label><input type="month" id="staffMonth"></div>
       <div class="field"><label>当月营业额（取自日报）</label><input type="text" id="staffMonthRev" readonly></div>
@@ -336,14 +344,6 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <button class="btn plain" id="btnStaffCancel" type="button" hidden>取消编辑</button>
     </div>
     <div class="list" id="staffList" style="margin-top:10px"></div>
-  </div>
-  <div class="card">
-    <h2>每日考勤</h2>
-    <div class="row two">
-      <div class="field"><label>日期</label><input type="date" id="attDate"></div>
-      <div class="field"><label>说明</label><input type="text" value="点选当天状态：出勤 / 休息 / 请假 / 旷工" readonly></div>
-    </div>
-    <div class="list" id="attBoard" style="margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>工资试算（底薪/日薪＋提成）</h2>
@@ -451,12 +451,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261122y"></script>
-<script src="cards-b.js?v=20261122y"></script>
-<script src="app1.js?v=20261122y"></script>
-<script src="app2.js?v=20261122y"></script>
-<script src="app3.js?v=20261122y"></script>
-<script src="app5.js?v=20261122y"></script>
-<script src="app4.js?v=20261122y"></script>
+<script src="cards-a.js?v=20261122z"></script>
+<script src="cards-b.js?v=20261122z"></script>
+<script src="app1.js?v=20261122z"></script>
+<script src="app2.js?v=20261122z"></script>
+<script src="app3.js?v=20261122z"></script>
+<script src="app5.js?v=20261122z"></script>
+<script src="app4.js?v=20261122z"></script>
 </body>
 </html>
