@@ -210,7 +210,7 @@ document.querySelectorAll('.seg-btn[data-ckseg]').forEach(b=>b.onclick=()=>switc
 document.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>toggleCkDiff());
 $('btnCk').onclick=saveCheck;
 $('btnCost').onclick=submitCost;
-['cRent','cWater','cLabor','cLogistics','cOther'].forEach(id=>$(id).oninput=drawCost);
+['cRent','cWater','cLogistics','cOther'].forEach(id=>$(id).oninput=drawCost);
 $('btnShop').onclick=saveShop;
 $('btnExpJson').onclick=expJson;
 $('btnExpCsv').onclick=expCsv;
