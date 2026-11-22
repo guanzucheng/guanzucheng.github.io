@@ -112,6 +112,21 @@ function normalizeCostCard(c){
   return c;
 }
 
+function normalizeStaff(e){
+  if(!e||typeof e!=='object')return e;
+  if(!e.id)e.id='e'+Math.random().toString(36).slice(2,8);
+  e.name=e.name||'';
+  e.role=e.role||'帮工';
+  e.type=(e.type==='temp'?'temp':'full');
+  e.phone=e.phone||'';
+  e.start=e.start||'';
+  e.status=(e.status==='off'?'off':'on');
+  e.base=(e.base==null?null:Number(e.base));
+  e.comm=(e.comm==null?0:Number(e.comm));
+  e.attend=(e.attend&&typeof e.attend==='object')?e.attend:{};
+  return e;
+}
+
 function mergeMaterials(arr){
   const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
   return MATERIALS.map(m=>{
@@ -131,10 +146,10 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMont
 function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
-function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};
+function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};o.staff=(Array.isArray(o.staff)?o.staff:[]).map(normalizeStaff);
   o.costCards=Array.isArray(o.costCards)&&o.costCards.length?o.costCards.map(normalizeCostCard):JSON.parse(JSON.stringify(PRESET_COST_CARDS));
   o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:65};
   o.cost.margin=(o.cost.margin==null?65:o.cost.margin);
