@@ -1,5 +1,5 @@
 /* ============ 日志 ============ */
-const LOG_TAG={in:['入库','tag ok'],out:['领用','tag out'],check:['盘点','tag gray'],custom:['自购','tag gray'],rename:['改名','tag gray'],daily:['日报','tag gray'],cost:['成本','tag gray']};
+const LOG_TAG={in:['入库','tag ok'],out:['领用','tag out'],check:['盘点','tag gray'],custom:['自购','tag gray'],rename:['改名','tag gray'],daily:['日报','tag gray'],cost:['成本','tag gray'],staff:['人员','tag gray']};
 function renderLog(){
   const box=$('logList'); if(!box)return;
   const f=($('lgType')&&$('lgType').value)||'全部';
@@ -176,13 +176,14 @@ function renderCards(){
 /* ============ 路由 ============ */
 function show(view){
   curView=view;
-  ['daily','stock','check','card','cost','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
+  ['daily','stock','card','cost','staff','check','record','log','setting'].forEach(v=>{$('view-'+v).hidden=v!==view;});
   document.querySelectorAll('.tabs-in button').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
   if(view==='daily') renderDaily();
   if(view==='stock'){renderStock();renderCustom();}
   if(view==='check') renderCheck();
   if(view==='card') renderCards();
   if(view==='cost') renderCost();
+  if(view==='staff') renderStaff();
   if(view==='record') renderRecords();
   if(view==='log') renderLog();
   if(view==='setting'){ $('setShop').value=S.shopName; }
@@ -190,7 +191,7 @@ function show(view){
 }
 function renderAll(){
   $('shopName').textContent=S.shopName;
-  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderCards(); renderCost(); renderRecords(); renderLog();
+  renderDaily(); renderStock(); renderCustom(); renderCheck(); renderCards(); renderCost(); renderStaff(); renderRecords(); renderLog();
 }
 
 $('btnSave').onclick=submitDaily;
@@ -238,6 +239,6 @@ document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dat
 })();
 
 syncCopy();
-window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','check','card','cost','record','log','setting'].indexOf(v)>=0)show(v);});
+window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','card','cost','staff','check','record','log','setting'].indexOf(v)>=0)show(v);});
 $('shopName').textContent=S.shopName;
 show((location.hash||'#/daily').slice(2)||'daily');
