@@ -174,7 +174,9 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMont
 function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u4'};
+function seed(){
+  return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u4'};
+}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};o.staff=(Array.isArray(o.staff)?o.staff:[]).map(normalizeStaff);
@@ -198,7 +200,7 @@ let curView='daily';
 
 /* ============ 操作日志 ============ */
 function dateOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function hhmm(ts){const d=new Date(ts);return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+function hhmm(ts){const d=new Date(ts);return d.getHours()+':'+pad2(d.getMinutes());}
 function logAdd(type,label,detail){
   S.logs.push({at:Date.now(),type,label,detail:detail||''});
   if(S.logs.length>800)S.logs=S.logs.slice(-800);
