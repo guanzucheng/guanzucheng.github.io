@@ -200,7 +200,7 @@ let curView='daily';
 
 /* ============ 操作日志 ============ */
 function dateOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function hhmm(ts){const d=new Date(ts);return d.getHours()+':'+pad2(d.getMinutes());}
+function hhmm(ts){const d=new Date(ts);const h=pad2(d.getHours());const m=pad2(d.getMinutes());return h+':'+m;}
 function logAdd(type,label,detail){
   S.logs.push({at:Date.now(),type,label,detail:detail||''});
   if(S.logs.length>800)S.logs=S.logs.slice(-800);
