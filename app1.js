@@ -1,4 +1,4 @@
-/* 原料清单：76 项（食材 65 · 包装 8 · 其它 3）；食材统一按「斤」，包装按个/条/包/掴，工装按件/顶 */
+/* 原料清单：77 项（食材 65 · 包装 9 · 其它 3）；食材统一按「斤」，包装按个/条/包/掴，工装按件/顶 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -68,6 +68,7 @@ const MATERIALS = [
   {n:'胡辣汤碗',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤勺',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤打包纸碗',unit:'个',cat:'包装物料',stock:null},
+  {n:'胡辣汤打包纸盖',unit:'个',cat:'包装物料',stock:null},
   {n:'外卖纸杯',unit:'条',cat:'包装物料',stock:null},
   {n:'托盘',unit:'个',cat:'包装物料',stock:null},
   {n:'一次性垫筐纸',unit:'包',cat:'包装物料',stock:null},
