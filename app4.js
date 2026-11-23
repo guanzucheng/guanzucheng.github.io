@@ -36,11 +36,36 @@ function renderRecords(){
 }
 
 /* ============ 导出与设置 ============ */
+function isWeChat(){return /MicroMessenger/i.test(navigator.userAgent);}
 function download(name,content,type){
-  const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=name; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  let saved=false;
+  try{
+    const blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+    saved=true;
+  }catch(e){saved=false;}
+  // 微信内置浏览器等环境拦截文件下载：弹出兜底面板，可复制内容留存
+  if(isWeChat()||!saved) openDlPanel(name,content);
+}
+function openDlPanel(name,content){
+  $('dlTitle').textContent=name;
+  $('dlText').value=content;
+  $('dlModal').hidden=false;
+}
+function closeDlPanel(){ $('dlModal').hidden=true; }
+function fallbackCopy(ta){
+  let ok=false;
+  try{ ok=document.execCommand('copy'); }catch(e){ ok=false; }
+  toast(ok?'已复制，可去粘贴':'复制失败，请长按文本手动复制');
+}
+function copyDlText(){
+  const ta=$('dlText'); ta.focus(); ta.select();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(()=>toast('已复制，可去粘贴')).catch(()=>fallbackCopy(ta));
+  }else{ fallbackCopy(ta); }
 }
 function csvEscape(v){
   const s=v==null?'':String(v);
@@ -219,6 +244,8 @@ $('btnExpStock').onclick=expStock;
 $('btnImpPrice').onclick=importPrices;
 $('btnExpPrice').onclick=expPrices;
 $('btnReset').onclick=resetAll;
+$('dlCopy').onclick=copyDlText;
+$('dlClose').onclick=closeDlPanel;
 $('stCat').onchange=renderStock;
 $('stQ').oninput=renderStock;
 $('ckCat').onchange=renderCheck;
