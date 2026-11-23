@@ -106,6 +106,13 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 #lockPwd{margin-bottom:10px}
 .lock-err{color:var(--warn);font-size:12.5px;min-height:18px;margin-bottom:6px}
 .lock-hint{text-align:center;color:var(--ink-3);font-size:12px;margin:14px 0 0}
+/* 导出兜底弹窗（微信等无法直接下载时，复制内容留存） */
+.dl-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:20px}
+.dl-modal[hidden]{display:none}
+.dl-box{width:100%;max-width:430px;background:#fff;border-radius:var(--r);padding:18px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
+.dl-box h2{font-size:16px;margin:0 0 4px}
+.dl-box textarea{width:100%;height:200;margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5}
+.dl-box p{word-break:break-word}
 </style>
 </head>
 <body>
@@ -457,7 +464,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   </div>
   <div class="card">
     <h2>数据备份</h2>
-    <p class="hint">数据只在这台设备里，换手机或清缓存就没了，建议每周导一次</p>
+    <p class="hint">数据只在这台设备里，换手机或清缓存就没了，建议每周导一次。微信里无法直接存文件，点导出后在弹窗里复制即可；想直接下载文件，可点右上角「···」用浏览器打开本页。</p>
     <div class="bar">
       <button class="btn plain" id="btnExpJson" type="button">导出全部数据（JSON）</button>
       <button class="btn plain" id="btnExpCsv" type="button">导出日报（CSV / Excel 可开）</button>
@@ -475,14 +482,27 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <footer>单机版 · 数据只存在你自己的浏览器 · 不用注册、不产生费用</footer>
 </div>
 
+<div class="dl-modal" id="dlModal" hidden>
+  <div class="dl-box">
+    <h2 id="dlTitle">导出数据</h2>
+    <p class="hint" id="dlHint">当前环境无法直接保存文件，可复制下面内容留存。</p>
+    <textarea id="dlText" readonly></textarea>
+    <div class="bar" style="margin-top:10px">
+      <button class="btn" id="dlCopy" type="button">复制全部内容</button>
+      <button class="btn plain" id="dlClose" type="button">关闭</button>
+    </div>
+    <p class="mini" style="margin-top:8px">复制后可粘贴发给自己（文件传输助手），或粘贴到 Excel / 记事本保存。</p>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261123e"></script>
-<script src="cards-b.js?v=20261123e"></script>
-<script src="app1.js?v=20261123e"></script>
-<script src="app2.js?v=20261123e"></script>
-<script src="app3.js?v=20261123e"></script>
-<script src="app5.js?v=20261123e"></script>
-<script src="app4.js?v=20261123e"></script>
+<script src="cards-a.js?v=20261123f"></script>
+<script src="cards-b.js?v=20261123f"></script>
+<script src="app1.js?v=20261123f"></script>
+<script src="app2.js?v=20261123f"></script>
+<script src="app3.js?v=20261123f"></script>
+<script src="app5.js?v=20261123f"></script>
+<script src="app4.js?v=20261123f"></script>
 </body>
 </html>
