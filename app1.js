@@ -1,16 +1,16 @@
-/* 原料清单：78 项（食材 66 · 包装 9 · 其它 3）；食材统一按「斤」，包装按个/条/包/掴，工装按件/顶 */
+/* 原料清单：82 项（食材 68 · 包装 10 · 其它 4）；单位以总部预警线表为准（斤/包/箱/桶/捆/件/个/套） */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
-  {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
-  {n:'木耳',unit:'斤',cat:'食材原料',stock:null},
-  {n:'虫草花',unit:'斤',cat:'食材原料',stock:null},
+  {n:'干面筋',unit:'包',cat:'食材原料',stock:null},
+  {n:'木耳',unit:'包',cat:'食材原料',stock:null},
+  {n:'虫草花',unit:'箱',cat:'食材原料',stock:null},
   {n:'白胡椒粉',unit:'斤',cat:'食材原料',stock:null},
-  {n:'秘制料油',unit:'斤',cat:'食材原料',stock:null},
+  {n:'料油',unit:'桶',cat:'食材原料',stock:null},
   {n:'去皮鲜山药',unit:'斤',cat:'食材原料',stock:null},
-  {n:'鲜牛肉',unit:'斤',cat:'食材原料',stock:null},
+  {n:'牛肉',unit:'斤',cat:'食材原料',stock:null},
   {n:'小麦淀粉',unit:'斤',cat:'食材原料',stock:null},
   {n:'玉米淀粉',unit:'斤',cat:'食材原料',stock:null},
-  {n:'太太乐鸡精',unit:'斤',cat:'食材原料',stock:null},
+  {n:'鸡精',unit:'箱',cat:'食材原料',stock:null},
   {n:'基豆',unit:'斤',cat:'食材原料',stock:null},
   {n:'花江豆',unit:'斤',cat:'食材原料',stock:null},
   {n:'赤小豆',unit:'斤',cat:'食材原料',stock:null},
@@ -33,10 +33,11 @@ const MATERIALS = [
   {n:'豆沫料',unit:'斤',cat:'食材原料',stock:null},
   {n:'豆沫专用粉条',unit:'斤',cat:'食材原料',stock:null},
   {n:'小米面',unit:'斤',cat:'食材原料',stock:null},
-  {n:'粉条',unit:'斤',cat:'食材原料',stock:null},
+  {n:'干粉条',unit:'包',cat:'食材原料',stock:null},
   {n:'辣椒面',unit:'斤',cat:'食材原料',stock:null},
   {n:'肉包子料',unit:'斤',cat:'食材原料',stock:null},
   {n:'素包子料',unit:'斤',cat:'食材原料',stock:null},
+  {n:'肉盒料',unit:'斤',cat:'食材原料',stock:null},
   {n:'雪菜',unit:'斤',cat:'食材原料',stock:null},
   {n:'大蒜',unit:'斤',cat:'食材原料',stock:null},
   {n:'牛肉馅',unit:'斤',cat:'食材原料',stock:null},
@@ -60,32 +61,35 @@ const MATERIALS = [
   {n:'糯米粉',unit:'斤',cat:'食材原料',stock:null},
   {n:'白糖',unit:'斤',cat:'食材原料',stock:null},
   {n:'味精',unit:'斤',cat:'食材原料',stock:null},
-  {n:'酵母（梅山牌）',unit:'斤',cat:'食材原料',stock:null},
-  {n:'无铝泡打粉（梅山牌）',unit:'斤',cat:'食材原料',stock:null},
+  {n:'酵母',unit:'箱',cat:'食材原料',stock:null},
+  {n:'泡打粉',unit:'箱',cat:'食材原料',stock:null},
   {n:'大豆混合油',unit:'斤',cat:'食材原料',stock:null},
   {n:'菜籽油',unit:'斤',cat:'食材原料',stock:null},
   {n:'纯正香油',unit:'斤',cat:'食材原料',stock:null},
   {n:'盐',unit:'斤',cat:'食材原料',stock:null},
+  {n:'骨汤包',unit:'件',cat:'食材原料',stock:null},
   {n:'胡辣汤碗',unit:'个',cat:'包装物料',stock:null},
   {n:'胡辣汤勺',unit:'个',cat:'包装物料',stock:null},
-  {n:'胡辣汤打包纸碗',unit:'个',cat:'包装物料',stock:null},
-  {n:'胡辣汤打包纸盖',unit:'个',cat:'包装物料',stock:null},
-  {n:'外卖纸杯',unit:'条',cat:'包装物料',stock:null},
+  {n:'胡辣汤打包碗',unit:'箱',cat:'包装物料',stock:null},
+  {n:'胡辣汤打包盖',unit:'箱',cat:'包装物料',stock:null},
+  {n:'外卖纸杯',unit:'箱',cat:'包装物料',stock:null},
   {n:'托盘',unit:'个',cat:'包装物料',stock:null},
   {n:'一次性垫筐纸',unit:'包',cat:'包装物料',stock:null},
   {n:'大打包袋',unit:'捆',cat:'包装物料',stock:null},
   {n:'小打包袋',unit:'捆',cat:'包装物料',stock:null},
-  {n:'围裙',unit:'件',cat:'其它',stock:null},
-  {n:'冬季工装',unit:'件',cat:'其它',stock:null},
-  {n:'帽子',unit:'顶',cat:'其它',stock:null},
+  {n:'肉盒纸袋',unit:'捆',cat:'包装物料',stock:null},
+  {n:'围裙',unit:'个',cat:'其它',stock:null},
+  {n:'冬季工装',unit:'套',cat:'其它',stock:null},
+  {n:'帽子',unit:'个',cat:'其它',stock:null},
+  {n:'夏季工装',unit:'套',cat:'其它',stock:null},
 ];
 
 /* 参考单价（元/对应单位），门店可改；未列项为未定价，门店自己填 */
 const REF_PRICES={
-  '胡辣汤料':43,'面筋':3,'木耳':32,'虫草花':28,'秘制料油':15,'去皮鲜山药':6.8,
+  '胡辣汤料':43,'干面筋':3,'木耳':32,'虫草花':28,'料油':15,'去皮鲜山药':6.8,
   '小麦淀粉':1.9,'基豆':6,'花江豆':6.4,'赤小豆':4,'云豆':7,'高粱米':2.12,'麦仁':1.74,
   '大枣（无核）':8,'江米':3.4,'莲子':28,'花生':5.2,'红曲米':7,'小米':3.8,'南瓜':1.5,
-  '青菜':2,'熟白芝麻':10,'豆沫料':35,'豆沫专用粉条':3.3,'小米面':3,'粉条':3.3,
+  '青菜':2,'熟白芝麻':10,'豆沫料':35,'豆沫专用粉条':3.3,'小米面':3,'干粉条':3.3,
   '肉包子料':35,'素包子料':35,'牛肉馅':30,'牛油':6,'葱':2,'姜':5,'鸡蛋':3.5,'碱面':1.8,'胡萝卜':1.5,
   '豆腐':2.2,'茄子':3.5,'香菇':6,'青辣椒':5,'包子专用粉条':3.3,'小香葱':5,'糯米粉':2.64,
   '白糖':3.48,'味精':4.1,'纯正香油':18
@@ -94,8 +98,10 @@ function defaultPrice(n){return (REF_PRICES[n]==null?null:REF_PRICES[n]);}
 
 /* 总部预置预警线（账面 ≤ 该值即提醒补货）；门店本机改过的预警线优先保留。单位须与账面单位一致 */
 const LOW_PRESET={
-  '胡辣汤料':100,'肉包子料':30,'素包子料':30,'豆沫料':20,'鲜牛肉':20,
-  '大打包袋':200,'小打包袋':200,'一次性垫筐纸':80,'胡辣汤碗':300,'胡辣汤勺':500
+  '胡辣汤料':100,'肉包子料':30,'素包子料':30,'肉盒料':20,'豆沫料':20,'骨汤包':3,
+  '料油':3,'干面筋':3,'虫草花':1,'木耳':1,'鸡精':3,'酵母':3,'泡打粉':3,'干粉条':3,'牛肉':20,
+  '大打包袋':200,'小打包袋':200,'肉盒纸袋':50,'一次性垫筐纸':80,'胡辣汤打包碗':20,'胡辣汤打包盖':20,
+  '外卖纸杯':10,'胡辣汤碗':300,'胡辣汤勺':500,'围裙':20,'冬季工装':10,'夏季工装':10
 };
 function defaultLow(n){return LOW_PRESET[n]==null?null:LOW_PRESET[n];}
 
@@ -168,7 +174,7 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMont
 function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u4';}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};o.staff=(Array.isArray(o.staff)?o.staff:[]).map(normalizeStaff);
@@ -181,7 +187,7 @@ function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.par
   const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
   o.materials=mergeMaterials(o.materials);
   /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
-  if(o.mig!=='u3'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u3';saveRaw(o);}
+  if(o.mig!=='u4'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u4';saveRaw(o);}
   return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
