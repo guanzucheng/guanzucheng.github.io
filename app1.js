@@ -1,4 +1,4 @@
-/* 原料清单：77 项（食材 65 · 包装 9 · 其它 3）；食材统一按「斤」，包装按个/条/包/掴，工装按件/顶 */
+/* 原料清单：78 项（食材 66 · 包装 9 · 其它 3）；食材统一按「斤」，包装按个/条/包/掴，工装按件/顶 */
 const MATERIALS = [
   {n:'胡辣汤料',unit:'斤',cat:'食材原料',stock:null},
   {n:'面筋',unit:'斤',cat:'食材原料',stock:null},
@@ -35,7 +35,8 @@ const MATERIALS = [
   {n:'小米面',unit:'斤',cat:'食材原料',stock:null},
   {n:'粉条',unit:'斤',cat:'食材原料',stock:null},
   {n:'辣椒面',unit:'斤',cat:'食材原料',stock:null},
-  {n:'包子料',unit:'斤',cat:'食材原料',stock:null},
+  {n:'肉包子料',unit:'斤',cat:'食材原料',stock:null},
+  {n:'素包子料',unit:'斤',cat:'食材原料',stock:null},
   {n:'雪菜',unit:'斤',cat:'食材原料',stock:null},
   {n:'大蒜',unit:'斤',cat:'食材原料',stock:null},
   {n:'牛肉馅',unit:'斤',cat:'食材原料',stock:null},
@@ -85,11 +86,18 @@ const REF_PRICES={
   '小麦淀粉':1.9,'基豆':6,'花江豆':6.4,'赤小豆':4,'云豆':7,'高粱米':2.12,'麦仁':1.74,
   '大枣（无核）':8,'江米':3.4,'莲子':28,'花生':5.2,'红曲米':7,'小米':3.8,'南瓜':1.5,
   '青菜':2,'熟白芝麻':10,'豆沫料':35,'豆沫专用粉条':3.3,'小米面':3,'粉条':3.3,
-  '包子料':35,'牛肉馅':30,'牛油':6,'葱':2,'姜':5,'鸡蛋':3.5,'碱面':1.8,'胡萝卜':1.5,
+  '肉包子料':35,'素包子料':35,'牛肉馅':30,'牛油':6,'葱':2,'姜':5,'鸡蛋':3.5,'碱面':1.8,'胡萝卜':1.5,
   '豆腐':2.2,'茄子':3.5,'香菇':6,'青辣椒':5,'包子专用粉条':3.3,'小香葱':5,'糯米粉':2.64,
   '白糖':3.48,'味精':4.1,'纯正香油':18
 };
 function defaultPrice(n){return (REF_PRICES[n]==null?null:REF_PRICES[n]);}
+
+/* 总部预置预警线（账面 ≤ 该值即提醒补货）；门店本机改过的预警线优先保留。单位须与账面单位一致 */
+const LOW_PRESET={
+  '胡辣汤料':100,'肉包子料':30,'素包子料':30,'豆沫料':20,'鲜牛肉':20,
+  '大打包袋':200,'小打包袋':200,'一次性垫筐纸':80,'胡辣汤碗':300,'胡辣汤勺':500
+};
+function defaultLow(n){return LOW_PRESET[n]==null?null:LOW_PRESET[n];}
 
 /* 预设成本卡数据见 cards-a.js / cards-b.js，全局变量 PRESET_COST_CARDS */
 
@@ -145,7 +153,7 @@ function mergeMaterials(arr){
   const old={}; (arr||[]).forEach(m=>{if(m&&m.n)old[m.n]=m;});
   return MATERIALS.map(m=>{
     const o=old[m.n];
-    const out=Object.assign({},m,{price:defaultPrice(m.n)});
+    const out=Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)});
     if(!o) return out;
     if(o.stock!=null) out.stock=o.stock;
     if(o.price!=null) out.price=o.price;
@@ -160,7 +168,7 @@ function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMont
 function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
-function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};}
+function seed(){return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u3'};}
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};o.staff=(Array.isArray(o.staff)?o.staff:[]).map(normalizeStaff);
