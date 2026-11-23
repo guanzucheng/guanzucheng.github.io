@@ -239,6 +239,25 @@ document.querySelectorAll('.tabs-in button').forEach(b=>b.onclick=()=>show(b.dat
 })();
 
 syncCopy();
-window.addEventListener('hashchange',()=>{const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','card','cost','staff','check','record','log','setting'].indexOf(v)>=0)show(v);});
-$('shopName').textContent=S.shopName;
-show((location.hash||'#/daily').slice(2)||'daily');
+window.addEventListener('hashchange',()=>{if(!localStorage.getItem('ysh_unlocked_v1'))return;const v=(location.hash||'').replace('#/','');if(v&&v!==curView&&['daily','stock','card','cost','staff','check','record','log','setting'].indexOf(v)>=0)show(v);});
+
+/* ===== 初级访问门禁：未输密码不进入账本；本机记住已解锁 ===== */
+const LOCK_KEY='ysh_unlocked_v1';
+const ACCESS_PWD='ysh2026';
+function enterApp(){
+  const ls=$('lockScreen'); if(ls) ls.hidden=true;
+  $('shopName').textContent=S.shopName;
+  show((location.hash||'#/daily').slice(2)||'daily');
+}
+(function gate(){
+  const locked=!localStorage.getItem(LOCK_KEY);
+  if(!locked){enterApp();return;}
+  const ls=$('lockScreen'); if(ls) ls.hidden=false;
+  const inp=$('lockPwd'),btn=$('lockBtn'),err=$('lockErr');
+  function tryUnlock(){
+    if(inp.value.trim()===ACCESS_PWD){localStorage.setItem(LOCK_KEY,'1');enterApp();}
+    else{err.textContent='密码不对，请核对后重试';inp.select();}
+  }
+  if(btn)btn.onclick=tryUnlock;
+  if(inp)inp.onkeydown=e=>{if(e.key==='Enter')tryUnlock();};
+})();
