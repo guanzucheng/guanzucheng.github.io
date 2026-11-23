@@ -112,6 +112,18 @@ function normalizeCostCard(c){
   return c;
 }
 
+/* 预置成本卡同步：门店未手动改价(edited=false)的卡跟随总部最新配方；改过单价的保留本机；补齐缺失的预置卡 */
+function syncPresetCards(o){
+  const pres=PRESET_COST_CARDS||[];
+  const byId={}; o.costCards.forEach(c=>{if(c&&c.id)byId[c.id]=c;});
+  pres.forEach(p=>{
+    const m=byId[p.id];
+    if(!m){o.costCards.push(JSON.parse(JSON.stringify(p)));}
+    else if(!m.edited){byId[p.id]=JSON.parse(JSON.stringify(p));}
+  });
+  o.costCards=o.costCards.map(c=>byId[c.id]||c);
+}
+
 function normalizeStaff(e){
   if(!e||typeof e!=='object')return e;
   if(!e.id)e.id='e'+Math.random().toString(36).slice(2,8);
@@ -152,6 +164,7 @@ let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};o.staff=(Array.isArray(o.staff)?o.staff:[]).map(normalizeStaff);
   o.costCards=Array.isArray(o.costCards)&&o.costCards.length?o.costCards.map(normalizeCostCard):JSON.parse(JSON.stringify(PRESET_COST_CARDS));
+  syncPresetCards(o);
   o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:65};
   o.cost.margin=(o.cost.margin==null?65:o.cost.margin);
   o.staffCfg=o.staffCfg||{}; if(o.staffCfg.poolRate==null)o.staffCfg.poolRate=20;
