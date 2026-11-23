@@ -32,7 +32,7 @@ function renderStock(){
     const a=amtOf(m);
     const amtTxt=a==null?'金额 —':('金额 '+money(a)+' 元');
     const tag=m.stock==null?'未建账':'已建账';
-    const lowRow=m.stock==null?'':'<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>预警线</span><input type="number" class="lowIn" data-key="'+key+'" value="'+(m.low==null?'':m.low)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>'+unit+'</span></div>';
+    const lowRow='<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:6px;font-size:12px;color:var(--ink-3)"><span>预警线</span><input type="number" class="lowIn" data-key="'+key+'" value="'+(m.low==null?'':m.low)+'" placeholder="填" inputmode="decimal" style="width:52px;padding:4px 6px;font-size:12px;text-align:center"><span>'+unit+'</span></div>';
     const lowTag=low?'<span class="tag warn" style="margin-left:6px">补货</span>':'';
     const stockBox=low?'border-color:var(--warn);color:var(--warn);background:#fbecea':'border:1px solid var(--line);background:#fff';
     const rowBg=low?'background:#fdf3f1;border-radius:8px;padding-left:8px;padding-right:8px':'';
