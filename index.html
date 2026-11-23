@@ -93,9 +93,35 @@ th{color:var(--ink-2);font-weight:600;background:#f1f6f2}
 footer{margin-top:24px;color:var(--ink-3);font-size:12px;text-align:center}
 h1.title{font-size:19px;margin:16px 0 2px}
 h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
+/* 斜向三行底纹水印：铺在内容之上，不挡点击与输入 */
+.watermark{position:fixed;inset:0;z-index:30;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22320%22%20height%3D%22210%22%20viewBox%3D%220%200%20320%20210%22%3E%3Cg%20transform%3D%22rotate%28-24%20160%20105%29%22%20fill%3D%22rgba%2829%2C130%2C60%2C0.09%29%22%20font-size%3D%2219%22%20font-family%3D%22PingFang%20SC%2CMicrosoft%20YaHei%2Csans-serif%22%20text-anchor%3D%22middle%22%3E%3Ctext%20x%3D%22160%22%20y%3D%2262%22%3E%E8%B1%AB%E8%86%B3%E7%85%8C%E8%83%A1%E8%BE%A3%E6%B1%A4%3C%2Ftext%3E%3Ctext%20x%3D%22160%22%20y%3D%22105%22%3E%E8%B1%AB%E8%86%B3%E7%85%8C%E8%83%A1%E8%BE%A3%E6%B1%A4%3C%2Ftext%3E%3Ctext%20x%3D%22160%22%20y%3D%22148%22%3E%E8%B1%AB%E8%86%B3%E7%85%8C%E8%83%A1%E8%BE%A3%E6%B1%A4%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat:repeat;}
+/* 入口密码门禁 */
+#lockScreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+#lockScreen[hidden]{display:none}
+.lock-box{width:100%;max-width:340px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+.lock-brand{font-size:22px;font-weight:800;letter-spacing:2px;text-align:center;color:var(--accent)}
+.lock-sub{text-align:center;color:var(--ink-3);font-size:13px;margin:8px 0 18px}
+#lockPwd{margin-bottom:10px}
+.lock-err{color:var(--warn);font-size:12.5px;min-height:18px;margin-bottom:6px}
+.lock-hint{text-align:center;color:var(--ink-3);font-size:12px;margin:14px 0 0}
 </style>
 </head>
 <body>
+
+<div class="watermark" aria-hidden="true"></div>
+
+<div id="lockScreen" hidden>
+  <div class="lock-box">
+    <div class="lock-brand">豫膳煌 · 小账本</div>
+    <p class="lock-sub">内部经营数据，请输入访问密码</p>
+    <input type="password" id="lockPwd" inputmode="text" placeholder="请输入访问密码" autocomplete="off">
+    <div class="lock-err" id="lockErr"></div>
+    <button class="btn" id="lockBtn" type="button">进入账本</button>
+    <p class="lock-hint">忘记密码请联系总部</p>
+  </div>
+</div>
 
 <header class="top">
   <div class="masthead"><span class="mh-brand">豫膳煌</span><span class="mh-sub">小账本</span></div>
@@ -451,12 +477,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261122z"></script>
-<script src="cards-b.js?v=20261122z"></script>
-<script src="app1.js?v=20261122z"></script>
-<script src="app2.js?v=20261122z"></script>
-<script src="app3.js?v=20261122z"></script>
-<script src="app5.js?v=20261122z"></script>
-<script src="app4.js?v=20261122z"></script>
+<script src="cards-a.js?v=20261123b"></script>
+<script src="cards-b.js?v=20261123b"></script>
+<script src="app1.js?v=20261123b"></script>
+<script src="app2.js?v=20261123b"></script>
+<script src="app3.js?v=20261123b"></script>
+<script src="app5.js?v=20261123b"></script>
+<script src="app4.js?v=20261123b"></script>
 </body>
 </html>
