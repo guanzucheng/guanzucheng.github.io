@@ -23,7 +23,7 @@ function expPrices(){
   const rows=itemList().filter(({m})=>m.price!=null).map(({m})=>[m.n,m.unit||'',m.price]);
   if(!rows.length){toast('还没填单价');return;}
   const head=['原料','单位','单价'];
-  const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
+  const csv=[head].concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店单价清单-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');
   toast('已导出单价清单');
 }
@@ -31,7 +31,7 @@ function expStock(){
   const head=['原料','品类','单位','账面','单价','金额'];
   const rows=itemList().map(({m})=>{const a=amtOf(m);return [m.n,m.cat||'门店自购',m.unit||'',m.stock==null?'':m.stock,m.price==null?'':m.price,a==null?'':a];});
   rows.push(['合计','','','','',stockTotal().sum]);
-  const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
+  const csv=[head].concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店库存金额-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');
   toast('已导出库存金额 CSV');
 }
@@ -131,7 +131,7 @@ function drawCheck(){
         if(amtCell){
           const p=ckRows[i].price;
           if(p==null){amtCell.textContent='—';}
-          else{const m2=Math.round(d2*p*100)/100;amtCell.textContent=(m2>0?'+':'')+money(m2)+' 元';amtCell.style.color=m2===0?'':'var(--warn)';}
+          else{const m2=Math.round(d2*p*100)/100;amtCell.textContent=(m2>0?'+':'-')+money(Math.abs(m2))+' 元';amtCell.style.color=m2===0?'':'var(--warn)';}
         }
       }
       updateCkTotal();
@@ -144,7 +144,7 @@ function drawCheck(){
     if(r.real!=null&&r.real!==''){
       const d2=Math.round((r.real-(r.book==null?0:r.book))*100)/100;
       if(cell){cell.textContent=(d2>0?'+':'')+d2+' '+r.unit;cell.style.color=d2===0?'':'var(--warn)';}
-      if(amtCell&&r.price!=null){const m2=Math.round(d2*r.price*100)/100;amtCell.textContent=(m2>0?'+':'')+money(m2)+' 元';amtCell.style.color=m2===0?'':'var(--warn)';}
+      if(amtCell&&r.price!=null){const m2=Math.round(d2*r.price*100)/100;amtCell.textContent=(m2>0?'+':'-')+money(Math.abs(m2))+' 元';amtCell.style.color=m2===0?'':'var(--warn)';}
     }
   });
   updateCkTotal(); renderCkHistory();
