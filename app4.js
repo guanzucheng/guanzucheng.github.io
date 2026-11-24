@@ -76,7 +76,7 @@ function expJson(){download('门店数据备份-'+todayStr()+'.json',JSON.string
 function expCsv(){
   const head=['日期','星期','天气','总营业额'];
   const rows=S.records.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>[r.date,weekLabel(r.date),r.weather||'',r.revenue]);
-  const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
+  const csv=[head].concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店日报-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出日报 CSV');
 }
 function expCk(){
@@ -88,7 +88,7 @@ function expCk(){
     const a=(r.price==null)?'':Math.round(d2*r.price*100)/100;
     rows.push([c.type==='current'?'当期':'月度',c.date,c.time||'',r.n,r.unit,r.book,r.real,d2,a]);
   }));
-  const csv=head.concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
+  const csv=[head].concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店盘点-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出盘点 CSV');
 }
 function saveShop(){
