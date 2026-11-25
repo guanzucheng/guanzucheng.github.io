@@ -219,19 +219,11 @@ function syncBaseLabel(){
   const lab=$('stBaseLabel'); if(lab)lab.textContent='月底薪（元/月）';
 }
 function onTypeChange(){ syncBaseLabel(); }
-/* 人员页分段：每日考勤 / 添加人员，二选一显示 */
+/* 人员页四选一：每日考勤 / 添加人员 / 工资结算 / 提成设置 */
 function switchStaffSeg(seg){
-  const att=$('seg-staff-att'), form=$('seg-staff-form');
-  if(att)att.hidden=seg!=='att';
-  if(form)form.hidden=seg!=='form';
+  const panels={att:'seg-staff-att',form:'seg-staff-form',pay:'seg-staff-pay',set:'seg-staff-set'};
+  Object.keys(panels).forEach(k=>{const el=$(panels[k]);if(el)el.hidden=k!==seg;});
   document.querySelectorAll('[data-staffseg]').forEach(b=>b.classList.toggle('on',b.dataset.staffseg===seg));
-}
-/* 人员页分段：工资结算 / 提成设置，二选一显示 */
-function switchStaffSeg2(seg){
-  const pay=$('seg-staff-pay'), set=$('seg-staff-set');
-  if(pay)pay.hidden=seg!=='pay';
-  if(set)set.hidden=seg!=='set';
-  document.querySelectorAll('[data-staffseg2]').forEach(b=>b.classList.toggle('on',b.dataset.staffseg2===seg));
 }
 function resetStaffForm(){
   editingId=null;
@@ -316,7 +308,6 @@ function bindStaffEvents(){
   const ad=$('attDate'); if(ad)ad.addEventListener('change',()=>{attDate=ad.value||todayStr();renderAttBoard();});
   const ty=$('stType'); if(ty)ty.addEventListener('change',onTypeChange);
   document.querySelectorAll('[data-staffseg]').forEach(b=>b.onclick=()=>switchStaffSeg(b.dataset.staffseg));
-  document.querySelectorAll('[data-staffseg2]').forEach(b=>b.onclick=()=>switchStaffSeg2(b.dataset.staffseg2));
   const pr=$('stPoolRate'); if(pr)pr.addEventListener('change',savePoolRate);
   const bs=$('btnStaffSave'); if(bs)bs.addEventListener('click',staffSave);
   const cc=$('btnStaffCancel'); if(cc)cc.addEventListener('click',resetStaffForm);
