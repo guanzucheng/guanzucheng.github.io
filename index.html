@@ -324,7 +324,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <h2>每日考勤</h2>
     <div class="row two">
       <div class="field"><label>日期</label><input type="date" id="attDate"></div>
-      <div class="field"><label>说明</label><input type="text" value="点选当天状态：出勤 / 休息 / 请假 / 旷工" readonly></div>
+      <div class="field"><label>说明</label><input type="text" value="点选当天状态；右侧可调公休天数、兼职工时，底部工资表实时更新" readonly></div>
     </div>
     <div class="list" id="attBoard" style="margin-top:10px"></div>
   </div>
@@ -333,11 +333,6 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <div class="field"><label>核算月份</label><input type="month" id="staffMonth"></div>
       <div class="field"><label>当月营业额（取自日报）</label><input type="text" id="staffMonthRev" readonly></div>
     </div>
-  </div>
-  <div class="card">
-    <h2>本月考勤汇总（公休 / 请假天数）</h2>
-    <p class="hint">填了本月天数就按这里算缺勤扣款；留空则按上方每日考勤板统计。公休带薪不扣，请假、旷工按日扣工资。切换核算月份后，录入的是对应月份。</p>
-    <div class="list" id="attMonthBoard" style="margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>提成设置（按超额利润均分）</h2>
@@ -505,12 +500,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261125c"></script>
-<script src="cards-b.js?v=20261125c"></script>
-<script src="app1.js?v=20261125c"></script>
-<script src="app2.js?v=20261125c"></script>
-<script src="app3.js?v=20261125c"></script>
-<script src="app5.js?v=20261125c"></script>
-<script src="app4.js?v=20261125c"></script>
+<script src="cards-a.js?v=20261125d"></script>
+<script src="cards-b.js?v=20261125d"></script>
+<script src="app1.js?v=20261125d"></script>
+<script src="app2.js?v=20261125d"></script>
+<script src="app3.js?v=20261125d"></script>
+<script src="app5.js?v=20261125d"></script>
+<script src="app4.js?v=20261125d"></script>
 </body>
 </html>
