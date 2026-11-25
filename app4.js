@@ -91,6 +91,38 @@ function expCk(){
   const csv=[head].concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
   download('门店盘点-'+todayStr()+'.csv','\ufeff'+csv,'text/csv;charset=utf-8');toast('已导出盘点 CSV');
 }
+/* 导出人员当月考勤与工资（与人员页工资表同口径：在岗人员，超额利润提成均分） */
+function expStaff(){
+  const on=S.staff.filter(e=>e.status==='on');
+  if(!S.staff.length){toast('还没有人员');return;}
+  if(!on.length){toast('暂无在职人员可导出');return;}
+  const rev=monthRevenue(staffMonth);
+  const profit=monthProfit(rev);
+  const cfg=staffCfg();
+  const pool=Math.round(profit*(Number(cfg.poolRate)||0)/100*100)/100;
+  const avg=on.length?Math.round(pool/on.length*100)/100:0;
+  const attLabel={work:'出勤',rest:'休息',leave:'请假'};
+  const head=['姓名','岗位','用工类型','薪资标准','应出勤','公休','请假','实出勤','缺勤扣款','全勤奖','提成','应发'];
+  const rows=[]; const detail=[];
+  on.forEach(e=>{
+    const w=staffWage(e,staffMonth,avg);
+    const att=w.att;
+    const std=w.byHour?('时薪 '+money(w.hourly||0)+' 元/时')
+      :(e.type==='temp'?('日薪 '+money(e.base||0)+' 元/天'):('底薪 '+money(e.base||0)+' 元/月'));
+    const workTxt=w.byHour?(w.hours+' 小时'):(e.type==='temp'?att.work+' 天':att.work);
+    const deduct=e.type==='temp'?'—':w.deduct;
+    rows.push([e.name,e.role,e.type==='temp'?'兼职':'全职',std,att.total,att.rest,att.leave,workTxt,deduct,w.bonus,w.comm,w.total]);
+    Object.keys(e.attend||{}).filter(k=>k.indexOf(staffMonth)===0).sort().forEach(k=>{
+      const v=e.attend[k]; if(v)detail.push([e.name,k,attLabel[v]||v]);
+    });
+  });
+  let body=[head].concat(rows).map(r=>r.map(csvEscape).join(',')).join('\n');
+  if(detail.length){
+    body+='\n\n'+[['姓名','日期','考勤状态']].concat(detail).map(r=>r.map(csvEscape).join(',')).join('\n');
+  }
+  download('人员考勤工资-'+staffMonth+'.csv','\ufeff'+body,'text/csv;charset=utf-8');
+  toast('已导出人员考勤工资 CSV');
+}
 function saveShop(){
   const v=$('setShop').value.trim();
   if(!v){toast('填个店名');return;}
@@ -241,6 +273,7 @@ $('btnExpJson').onclick=expJson;
 $('btnExpCsv').onclick=expCsv;
 $('btnExpCk').onclick=expCk;
 $('btnExpStock').onclick=expStock;
+$('btnExpStaff').onclick=expStaff;
 $('btnImpPrice').onclick=importPrices;
 $('btnExpPrice').onclick=expPrices;
 $('btnReset').onclick=resetAll;
