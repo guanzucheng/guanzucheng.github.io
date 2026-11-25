@@ -1,4 +1,4 @@
-/* ============ 人员管理（正式工 / 临时工，底薪 + 超额利润提成均分） ============ */
+/* ============ 人员管理（全职 / 兼职，底薪扣缺勤款 + 超额利润提成均分） ============ */
 const STAFF_ROLES=['店长','烧汤师傅','面点师傅','油炸师傅','售卖员','收银','收碗'];
 const ATT_OPTS=[['work','出勤'],['rest','休息'],['leave','请假'],['absent','旷工']];
 let staffMonth=curMonthStr();
@@ -9,6 +9,28 @@ function curMonthStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getM
 function escStaff(s){return String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function monthRevenue(m){return S.records.filter(r=>r.date&&r.date.indexOf(m)===0).reduce((a,r)=>a+(Number(r.revenue)||0),0);}
 function attendDays(e,m){const d=e.attend||{};let n=0;Object.keys(d).forEach(k=>{if(k.indexOf(m)===0&&(d[k]==='work'||d[k]==='overtime'))n++;});return n;}
+/* 当月日历天数（日工资分母，与十月表口径：基本工资 ÷ 31） */
+function daysInMonth(m){const p=String(m).split('-').map(Number);return new Date(p[0],p[1],0).getDate();}
+/* 逐日考勤统计：rest=公休，leave/absent=请假/旷工（均计缺勤） */
+function countAttend(e,m,kind){
+  const d=e.attend||{};let n=0;
+  Object.keys(d).forEach(k=>{
+    if(k.indexOf(m)!==0)return;
+    if(kind==='rest'&&d[k]==='rest')n++;
+    if(kind==='leave'&&(d[k]==='leave'||d[k]==='absent'))n++;
+  });
+  return n;
+}
+/* 月度考勤汇总：手动填的公休/请假天数优先；未填则按每日考勤板统计。实出勤=应出勤-公休-请假 */
+function attendance(e,m){
+  const total=daysInMonth(m);
+  const ma=(e.monthAtt||{})[m]||{};
+  const manual=(ma.rest!=null||ma.leave!=null);
+  const rest=manual?(Number(ma.rest)||0):countAttend(e,m,'rest');
+  const leave=manual?(Number(ma.leave)||0):countAttend(e,m,'leave');
+  const work=Math.max(total-rest-leave,0);
+  return {total,rest,leave,work,manual};
+}
 
 function staffCfg(){
   if(!S.staffCfg)S.staffCfg={};
@@ -25,14 +47,22 @@ function beMonthly(){
 function monthProfit(rev){const {be}=beMonthly();return Math.max(Math.round((rev-be)*100)/100,0);}
 
 function staffWage(e,m,avgComm){
-  const days=attendDays(e,m);
+  const att=attendance(e,m);
   const base=Number(e.base)||0;
-  const fixed=e.type==='temp'?Math.round(base*days*100)/100:base;
+  const days=att.work;
+  let fixed,deduct=0;
+  if(e.type==='temp'){
+    fixed=Math.round(base*days*100)/100;
+  }else{
+    const dayWage=att.total>0?base/att.total:0;
+    deduct=Math.round(dayWage*att.leave*100)/100;
+    fixed=Math.max(Math.round((base-deduct)*100)/100,0);
+  }
   const comm=Math.round((Number(avgComm)||0)*100)/100;
   const total=Math.round((fixed+comm)*100)/100;
-  return {days,fixed,comm,total};
+  return {att,days,fixed,deduct,comm,total};
 }
-/* 当月固定工资合计：正式底薪＋临时工日薪×出勤天数（不含提成池），供运营成本页自动取数 */
+/* 当月固定工资合计：全职底薪扣缺勤款＋兼职日薪×出勤天数（不含提成池），供运营成本页自动取数 */
 function staffFixedTotal(m){
   const mm=m||staffMonth;
   const on=S.staff.filter(e=>e.status==='on');
@@ -59,6 +89,7 @@ function renderStaff(){
   renderStaffSummary(rev,pool,on);
   renderStaffList();
   renderAttBoard();
+  renderAttMonthBoard();
   renderPayroll(pool,avg,on);
 }
 
@@ -78,13 +109,13 @@ function renderStaffList(){
   const box=$('staffList'); if(!box)return;
   if(!S.staff.length){box.innerHTML='<div class="mini">还没有人员，先在上面添加。</div>';return;}
   box.innerHTML=S.staff.map(e=>{
-    const tag=e.type==='temp'?'临时':'正式';
+    const tag=e.type==='temp'?'兼职':'全职';
     const st=e.status==='off'?'<span class="tag warn">离职</span>':'<span class="tag ok">在职</span>';
     const baseTxt=e.type==='temp'?('日薪 '+money(e.base||0)+' 元/天'):('底薪 '+money(e.base||0)+' 元/月');
     return `<div class="item">
       <div>
         <div class="nm">${escStaff(e.name)} ${st}</div>
-        <div class="sub">${escStaff(e.role)} · ${tag} · ${baseTxt}${e.phone?' · '+escStaff(e.phone):''}</div>
+        <div class="sub">${escStaff(e.role)} · ${tag} · ${baseTxt}</div>
       </div>
       <div class="bar" style="margin-left:auto">
         <button class="btn plain" data-act="edit" data-id="${e.id}">改</button>
@@ -108,15 +139,59 @@ function renderAttBoard(){
 
 function renderPayroll(pool,avg,on){
   const body=$('payBody'); const sum=$('paySum'); if(!body)return;
-  if(!on.length){body.innerHTML='<tr><td colspan="6" class="mini">暂无在职人员。</td></tr>';if(sum)sum.textContent='';return;}
-  let sf=0;
+  if(!on.length){body.innerHTML='<tr><td colspan="9" class="mini">暂无在职人员。</td></tr>';if(sum)sum.textContent='';return;}
+  let sf=0,ded=0;
   body.innerHTML=on.map(e=>{
     const w=staffWage(e,staffMonth,avg);
-    sf+=w.fixed;
-    const baseTxt=e.type==='temp'?`日薪 ${money(e.base||0)}×${w.days} 天`:`底薪 ${money(e.base||0)}`;
-    return `<tr><td>${escStaff(e.name)}</td><td>${e.type==='temp'?'临时':'正式'}</td><td>${baseTxt}</td><td>${w.days} 天</td><td>${money(w.comm)}</td><td><b>${money(w.total)}</b></td></tr>`;
-  }).join('')+`<tr><td colspan="4" class="mini">合计</td><td><b>${money(pool)}</b></td><td><b>${money(Math.round((sf+pool)*100)/100)}</b></td></tr>`;
-  if(sum)sum.textContent=`固定部分合计 ${money(sf)} 元，提成池 ${money(pool)} 元（人均 ${money(avg)} 元），应发合计 ${money(Math.round((sf+pool)*100)/100)} 元。`;
+    sf+=w.fixed; ded+=w.deduct;
+    const att=w.att;
+    const baseTxt=e.type==='temp'?`日薪 ${money(e.base||0)}`:`${money(e.base||0)}`;
+    const deductTxt=e.type==='temp'?'—':money(w.deduct);
+    return `<tr>
+      <td>${escStaff(e.name)}</td>
+      <td>${baseTxt}</td>
+      <td>${att.total}</td>
+      <td>${att.rest}</td>
+      <td>${att.leave}</td>
+      <td>${att.work}</td>
+      <td>${deductTxt}</td>
+      <td>${money(w.comm)}</td>
+      <td><b>${money(w.total)}</b></td>
+    </tr>`;
+  }).join('')+`<tr><td colspan="6" class="mini">合计</td><td><b>${money(ded)}</b></td><td><b>${money(pool)}</b></td><td><b>${money(Math.round((sf+pool)*100)/100)}</b></td></tr>`;
+  if(sum)sum.textContent=`固定部分合计 ${money(sf)} 元，缺勤扣款 ${money(ded)} 元，提成池 ${money(pool)} 元（人均 ${money(avg)} 元），应发合计 ${money(Math.round((sf+pool)*100)/100)} 元。`;
+}
+
+/* 本月考勤汇总录入：公休、请假/旷工天数；留空则回退到每日考勤板统计 */
+function setMonthAtt(e,key,val){
+  if(!e.monthAtt)e.monthAtt={};
+  if(!e.monthAtt[staffMonth])e.monthAtt[staffMonth]={rest:0,leave:0};
+  const row=e.monthAtt[staffMonth];
+  if(val===''){delete row[key];}
+  else{const n=Number(val);row[key]=isNaN(n)?0:n;}
+  save(); renderStaff();
+}
+function renderAttMonthBoard(){
+  const box=$('attMonthBoard'); if(!box)return;
+  const on=S.staff.filter(e=>e.status==='on');
+  if(!on.length){box.innerHTML='<div class="mini">暂无在职人员。</div>';return;}
+  box.innerHTML=on.map(e=>{
+    const ma=(e.monthAtt||{})[staffMonth]||{};
+    const rest=ma.rest==null?'':ma.rest;
+    const leave=ma.leave==null?'':ma.leave;
+    return `<div class="item">
+      <div class="nm" style="min-width:74px">${escStaff(e.name)}</div>
+      <div class="bar">
+        <label class="mini" style="margin-right:12px">公休 <input type="number" min="0" id="mr-${e.id}" value="${rest}" style="width:64px"></label>
+        <label class="mini">请假/旷工 <input type="number" min="0" id="ml-${e.id}" value="${leave}" style="width:64px"></label>
+      </div>
+    </div>`;
+  }).join('');
+  on.forEach(e=>{
+    const r=$('mr-'+e.id), l=$('ml-'+e.id);
+    if(r)r.onchange=()=>setMonthAtt(e,'rest',r.value);
+    if(l)l.onchange=()=>setMonthAtt(e,'leave',l.value);
+  });
 }
 
 function collectStaffForm(){
@@ -126,7 +201,6 @@ function collectStaffForm(){
     type:$('stType').value,
     status:$('stStatus').value,
     base:Number($('stBase').value)||0,
-    phone:$('stPhone').value.trim(),
     start:$('stStart').value
   };
 }
@@ -136,7 +210,7 @@ function syncBaseLabel(){
 function onTypeChange(){ syncBaseLabel(); }
 function resetStaffForm(){
   editingId=null;
-  ['stName','stPhone','stStart','stBase'].forEach(id=>{const el=$(id);if(el)el.value='';});
+  ['stName','stStart','stBase'].forEach(id=>{const el=$(id);if(el)el.value='';});
   $('stRole').value='售卖员';$('stType').value='full';$('stStatus').value='on';
   $('staffFormTitle').textContent='添加人员';
   $('btnStaffSave').textContent='保存人员';
@@ -147,7 +221,7 @@ function fillStaffForm(e){
   editingId=e.id;
   $('stName').value=e.name;$('stRole').value=e.role;$('stType').value=e.type;
   $('stStatus').value=e.status;$('stBase').value=e.base==null?'':e.base;
-  $('stPhone').value=e.phone;$('stStart').value=e.start;
+  $('stStart').value=e.start;
   $('staffFormTitle').textContent='修改人员';
   $('btnStaffSave').textContent='保存修改';
   $('btnStaffCancel').hidden=false;
