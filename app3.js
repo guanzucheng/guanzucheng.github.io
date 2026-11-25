@@ -53,7 +53,7 @@ function ckVisible(){
     const m=x.r;
     if(cat!=='全部'&&(m.cat||'门店自购')!==cat) return false;
     if(ckDiffOnly&&!isDiffRow(m)) return false;
-    if(!q) return true;
+    if(!q) return m.book!=null;
     return m.n.toLowerCase().indexOf(q)>=0;
   });
 }
@@ -113,7 +113,10 @@ function rebuildCheck(){
 function drawCheck(){
   const vis=ckVisible();
   const body=$('ckBody');
-  if(!vis.length){body.innerHTML='<tr><td colspan="5" class="mini">'+(ckDiffOnly?'目前没有盘点差异的原料':'没有匹配的原料')+'</td></tr>';updateCkTotal();return;}
+  if(!vis.length){
+    const q=(($('ckQ')&&$('ckQ').value)||'').trim();
+    const msg=ckDiffOnly?'目前没有盘点差异的原料':(q?'没有匹配的原料':'暂无库存原料，入库后自动显示');
+    body.innerHTML='<tr><td colspan="5" class="mini">'+msg+'</td></tr>';updateCkTotal();return;}
   body.innerHTML=vis.map(x=>{const r=x.r;return `<tr><td>${r.n}</td><td>${r.book==null?'未建账':r.book+' '+r.unit}</td>
     <td><input type="number" data-i="${x.i}" class="ckIn" placeholder="实盘" value="${r.real==null?'':r.real}" style="padding:5px 8px"></td>
     <td class="ckDiff" data-i="${x.i}">—</td><td class="ckAmt" data-i="${x.i}">—</td></tr>`;}).join('');
