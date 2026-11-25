@@ -93,11 +93,9 @@ th{color:var(--ink-2);font-weight:600;background:#f1f6f2}
 footer{margin-top:24px;color:var(--ink-3);font-size:12px;text-align:center}
 h1.title{font-size:19px;margin:16px 0 2px}
 h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
-/* 斜向三行底纹水印：铺在内容之上，不挡点击与输入 */
 .watermark{position:fixed;inset:0;z-index:30;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22320%22%20height%3D%22210%22%20viewBox%3D%220%200%20320%20210%22%3E%3Cg%20transform%3D%22rotate%28-24%20160%20105%29%22%20fill%3D%22rgba%2829%2C130%2C60%2C0.09%29%22%20font-size%3D%2219%22%20font-family%3D%22PingFang%20SC%2CMicrosoft%20YaHei%2Csans-serif%22%20text-anchor%3D%22middle%22%3E%3Ctext%20x%3D%22160%22%20y%3D%2262%22%3E%E8%B1%AB%E8%86%B3%E7%85%8C%E8%83%A1%E8%BE%A3%E6%B1%A4%3C%2Ftext%3E%3Ctext%20x%3D%22160%22%20y%3D%22105%22%3E%E8%B1%AB%E8%86%B3%E7%85%8C%E8%83%A1%E8%BE%A3%E6%B1%A4%3C%2Ftext%3E%3Ctext%20x%3D%22160%22%20y%3D%22148%22%3E%E8%B1%AB%E8%86%B3%E7%85%8C%E8%83%A1%E8%BE%A3%E6%B1%A4%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fsvg%3E");
   background-repeat:repeat;}
-/* 入口密码门禁 */
 #lockScreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
 #lockScreen[hidden]{display:none}
 .lock-box{width:100%;max-width:340px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.1)}
@@ -106,7 +104,6 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 #lockPwd{margin-bottom:10px}
 .lock-err{color:var(--warn);font-size:12.5px;min-height:18px;margin-bottom:6px}
 .lock-hint{text-align:center;color:var(--ink-3);font-size:12px;margin:14px 0 0}
-/* 导出兜底弹窗（微信等无法直接下载时，复制内容留存） */
 .dl-modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:20px}
 .dl-modal[hidden]{display:none}
 .dl-box{width:100%;max-width:430px;background:#fff;border-radius:var(--r);padding:18px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
@@ -296,7 +293,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <h1 class="title">运营成本<span>固定开支，按 65% 毛利率算每天保本营业额</span></h1>
   <div class="card">
     <h2>月度固定开支（元 / 月）</h2>
-    <p class="hint">房租（含物业费）、水电费、物流费、其它按月填写；人工费自动取自人员模块的固定工资合计（全职底薪扣缺勤款＋兼职日薪×出勤天数），提成不计入保本固定成本。数字只存在这台设备</p>
+    <p class="hint">房租（含物业费）、水电费、物流费、其它按月填写；人工费自动取自人员模块的固定工资合计（全职底薪扣缺勤款＋兼职时薪×工时或日薪×出勤天数），提成不计入保本固定成本。数字只存在这台设备</p>
     <div class="row two">
       <div class="field"><label>房租（含物业费）</label><input type="number" id="cRent" inputmode="decimal" placeholder="0"></div>
       <div class="field"><label>水电费</label><input type="number" id="cWater" inputmode="decimal" placeholder="0"></div>
@@ -316,7 +313,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：人员管理 ===== -->
 <section id="view-staff" hidden>
   <h1 class="title">人员<span>全职 / 兼职，底薪扣缺勤款加提成台账</span></h1>
-  <div class="note">全职按月底薪扣缺勤款＋提成，兼职按日工资×出勤天数＋提成。缺勤扣款＝日工资（基本工资÷当月天数）×请假/旷工天数，公休带薪不扣。提成来自超出保本点的超额利润：按运营成本算出月保本营业额，超出部分按设定比例提为奖金池，再按在岗人数均分。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
+  <div class="note">全职按月底薪扣缺勤款＋提成；兼职可填小时工资×本月工时结算，未填工时则按日工资×出勤天数＋提成。缺勤扣款＝日工资（基本工资÷当月天数）×请假/旷工天数，公休带薪不扣。提成来自超出保本点的超额利润：按运营成本算出月保本营业额，超出部分按设定比例提为奖金池，再按在岗人数均分。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
   <div class="card">
     <div class="row three" id="staffSummary"></div>
   </div>
@@ -373,6 +370,9 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="row two" style="margin-top:10px">
       <div class="field"><label id="stBaseLabel">月底薪（元/月）</label><input type="number" id="stBase" inputmode="decimal" placeholder="0"></div>
     </div>
+    <div class="row two" style="margin-top:10px" id="stHourlyWrap" hidden>
+      <div class="field"><label>小时工资（元/时）</label><input type="number" id="stHourly" inputmode="decimal" placeholder="0"></div>
+    </div>
     <div class="row two" style="margin-top:10px">
       <div class="field"><label>入职日期（可选）</label><input type="date" id="stStart"></div>
     </div>
@@ -383,8 +383,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="list" id="staffList" style="margin-top:10px"></div>
   </div>
   <div class="card">
-    <h2>工资试算（基本工资 − 缺勤扣款 ＋ 提成）</h2>
-    <div class="mini" style="margin-bottom:8px">日工资＝基本工资÷当月天数；缺勤扣款＝日工资×请假/旷工天数；公休带薪不扣；应发＝基本工资−缺勤扣款＋人均提成。</div>
+    <h2>工资结算（基本工资 − 缺勤扣款 ＋ 提成）</h2>
+    <div class="mini" style="margin-bottom:8px">日工资＝基本工资÷当月天数；缺勤扣款＝日工资×请假/旷工天数；公休带薪不扣；兼职按小时结＝小时工资×本月工时；应发＝固定工资＋人均提成。</div>
     <div style="overflow-x:auto">
       <table>
         <colgroup><col style="width:14%"><col style="width:12%"><col style="width:9%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:13%"><col style="width:13%"><col style="width:13%"></colgroup>
@@ -502,12 +502,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261125a"></script>
-<script src="cards-b.js?v=20261125a"></script>
-<script src="app1.js?v=20261125a"></script>
-<script src="app2.js?v=20261125a"></script>
-<script src="app3.js?v=20261125a"></script>
-<script src="app5.js?v=20261125a"></script>
-<script src="app4.js?v=20261125a"></script>
+<script src="cards-a.js?v=20261125b"></script>
+<script src="cards-b.js?v=20261125b"></script>
+<script src="app1.js?v=20261125b"></script>
+<script src="app2.js?v=20261125b"></script>
+<script src="app3.js?v=20261125b"></script>
+<script src="app5.js?v=20261125b"></script>
+<script src="app4.js?v=20261125b"></script>
 </body>
 </html>
