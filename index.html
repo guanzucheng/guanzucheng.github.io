@@ -296,7 +296,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <h1 class="title">运营成本<span>固定开支，按 65% 毛利率算每天保本营业额</span></h1>
   <div class="card">
     <h2>月度固定开支（元 / 月）</h2>
-    <p class="hint">房租（含物业费）、水电费、物流费、其它按月填写；人工费自动取自人员模块的固定工资合计（正式底薪＋临时工日薪×出勤天数），提成不计入保本固定成本。数字只存在这台设备</p>
+    <p class="hint">房租（含物业费）、水电费、物流费、其它按月填写；人工费自动取自人员模块的固定工资合计（全职底薪扣缺勤款＋兼职日薪×出勤天数），提成不计入保本固定成本。数字只存在这台设备</p>
     <div class="row two">
       <div class="field"><label>房租（含物业费）</label><input type="number" id="cRent" inputmode="decimal" placeholder="0"></div>
       <div class="field"><label>水电费</label><input type="number" id="cWater" inputmode="decimal" placeholder="0"></div>
@@ -315,8 +315,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <!-- ===== 视图：人员管理 ===== -->
 <section id="view-staff" hidden>
-  <h1 class="title">人员<span>正式工 / 临时工，底薪加提成台账</span></h1>
-  <div class="note">正式工按月底薪＋提成，临时工按日工资×出勤天数＋提成。提成来自超出保本点的超额利润：按运营成本算出月保本营业额，超出部分按设定比例提为奖金池，再按在岗人数均分。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
+  <h1 class="title">人员<span>全职 / 兼职，底薪扣缺勤款加提成台账</span></h1>
+  <div class="note">全职按月底薪扣缺勤款＋提成，兼职按日工资×出勤天数＋提成。缺勤扣款＝日工资（基本工资÷当月天数）×请假/旷工天数，公休带薪不扣。提成来自超出保本点的超额利润：按运营成本算出月保本营业额，超出部分按设定比例提为奖金池，再按在岗人数均分。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
   <div class="card">
     <div class="row three" id="staffSummary"></div>
   </div>
@@ -333,6 +333,11 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <div class="field"><label>核算月份</label><input type="month" id="staffMonth"></div>
       <div class="field"><label>当月营业额（取自日报）</label><input type="text" id="staffMonthRev" readonly></div>
     </div>
+  </div>
+  <div class="card">
+    <h2>本月考勤汇总（公休 / 请假天数）</h2>
+    <p class="hint">填了本月天数就按这里算缺勤扣款；留空则按上方每日考勤板统计。公休带薪不扣，请假、旷工按日扣工资。切换核算月份后，录入的是对应月份。</p>
+    <div class="list" id="attMonthBoard" style="margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>提成设置（按超额利润均分）</h2>
@@ -359,7 +364,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     </div>
     <div class="row two" style="margin-top:10px">
       <div class="field"><label>用工类型</label>
-        <select id="stType"><option value="full">正式工</option><option value="temp">临时工</option></select>
+        <select id="stType"><option value="full">全职</option><option value="temp">兼职</option></select>
       </div>
       <div class="field"><label>状态</label>
         <select id="stStatus"><option value="on">在职</option><option value="off">离职</option></select>
@@ -367,7 +372,6 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     </div>
     <div class="row two" style="margin-top:10px">
       <div class="field"><label id="stBaseLabel">月底薪（元/月）</label><input type="number" id="stBase" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>手机号（可选）</label><input type="text" id="stPhone" placeholder="选填"></div>
     </div>
     <div class="row two" style="margin-top:10px">
       <div class="field"><label>入职日期（可选）</label><input type="date" id="stStart"></div>
@@ -379,11 +383,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="list" id="staffList" style="margin-top:10px"></div>
   </div>
   <div class="card">
-    <h2>工资试算（底薪/日薪＋提成）</h2>
+    <h2>工资试算（基本工资 − 缺勤扣款 ＋ 提成）</h2>
+    <div class="mini" style="margin-bottom:8px">日工资＝基本工资÷当月天数；缺勤扣款＝日工资×请假/旷工天数；公休带薪不扣；应发＝基本工资−缺勤扣款＋人均提成。</div>
     <div style="overflow-x:auto">
       <table>
-        <colgroup><col style="width:24%"><col style="width:13%"><col style="width:19%"><col style="width:13%"><col style="width:15%"><col style="width:16%"></colgroup>
-        <thead><tr><th>姓名</th><th>类型</th><th>计酬基数</th><th>出勤</th><th>提成（元）</th><th>应发（元）</th></tr></thead>
+        <colgroup><col style="width:14%"><col style="width:12%"><col style="width:9%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:13%"><col style="width:13%"><col style="width:13%"></colgroup>
+        <thead><tr><th>姓名</th><th>基本工资</th><th>应出勤</th><th>公休</th><th>请假/旷工</th><th>实出勤</th><th>缺勤扣款</th><th>提成</th><th>应发</th></tr></thead>
         <tbody id="payBody"></tbody>
       </table>
     </div>
@@ -497,12 +502,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261123g"></script>
-<script src="cards-b.js?v=20261123g"></script>
-<script src="app1.js?v=20261123g"></script>
-<script src="app2.js?v=20261123g"></script>
-<script src="app3.js?v=20261123g"></script>
-<script src="app5.js?v=20261123g"></script>
-<script src="app4.js?v=20261123g"></script>
+<script src="cards-a.js?v=20261125a"></script>
+<script src="cards-b.js?v=20261125a"></script>
+<script src="app1.js?v=20261125a"></script>
+<script src="app2.js?v=20261125a"></script>
+<script src="app3.js?v=20261125a"></script>
+<script src="app5.js?v=20261125a"></script>
+<script src="app4.js?v=20261125a"></script>
 </body>
 </html>
