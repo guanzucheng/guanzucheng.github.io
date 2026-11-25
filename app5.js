@@ -21,15 +21,16 @@ function countAttend(e,m,kind){
   });
   return n;
 }
-/* 考勤口径：公休天数在人员表单按月调整；请假按每日考勤板统计；实出勤=应出勤-公休-请假 */
+/* 考勤口径：rest=逐日考勤板已确认休息的实际天数；restLimit=表单填的可公休天数（上限，不进工资表公休列）；请假按每日考勤板统计；实出勤=应出勤-实际休息-请假 */
 function attendance(e,m){
   const total=daysInMonth(m);
   const ma=(e.monthAtt||{})[m]||{};
-  const rest=ma.rest!=null?(Number(ma.rest)||0):countAttend(e,m,'rest');
+  const rest=countAttend(e,m,'rest');
+  const restLimit=ma.restLimit!=null?(Number(ma.restLimit)||0):null;
   const leave=countAttend(e,m,'leave');
   const work=Math.max(total-rest-leave,0);
   const hours=Number(ma.hours)||0;
-  return {total,rest,leave,work,hours};
+  return {total,rest,restLimit,leave,work,hours};
 }
 
 function staffCfg(){
@@ -64,9 +65,10 @@ function staffWage(e,m,avgComm){
     deduct=Math.round(dayWage*att.leave*100)/100;
     fixed=Math.max(Math.round((base-deduct)*100)/100,0);
   }
-  /* 全勤奖：当月无请假即发（公休带薪不影响全勤）；填了金额才发 */
+  /* 全勤奖：当月无请假，且实际休息天数不超过可公休天数；可公休留空则不限休息天数；填了金额才发 */
   const bonusRaw=Number(e.attBonus)||0;
-  const bonus=att.leave===0?Math.round(bonusRaw*100)/100:0;
+  const restOk=att.restLimit==null||att.rest<=att.restLimit;
+  const bonus=(att.leave===0&&restOk)?Math.round(bonusRaw*100)/100:0;
   const comm=Math.round((Number(avgComm)||0)*100)/100;
   const total=Math.round((fixed+bonus+comm)*100)/100;
   return {att,days,fixed,deduct,bonus,comm,total,byHour,hours:att.hours,hourly};
@@ -183,7 +185,7 @@ function renderPayroll(pool,avg,on){
   if(sum)sum.textContent=`固定部分合计 ${money(sf)} 元，全勤奖 ${money(bonusSum)} 元，缺勤扣款 ${money(ded)} 元，提成池 ${money(pool)} 元（人均 ${money(avg)} 元），应发合计 ${money(Math.round((sf+bonusSum+pool)*100)/100)} 元。`;
 }
 
-/* 月度考勤录入：公休天数、兼职工时（请假由每日考勤板统计，不在此录） */
+/* 月度考勤录入：兼职工时（请假、休息由每日考勤板统计，不在此录） */
 function setMonthAtt(e,key,val){
   if(!e.monthAtt)e.monthAtt={};
   if(!e.monthAtt[staffMonth])e.monthAtt[staffMonth]={};
@@ -202,25 +204,24 @@ function collectStaffForm(){
     name:$('stName').value.trim(),
     role:$('stRole').value,
     type,
-    status:$('stStatus').value,
     base:type==='full'?(Number(bv)||0):0,
     hourly:type==='temp'&&hv!==''?Number(hv):null,
     attBonus:bn!==''?Number(bn):null,
     start:$('stStart').value
   };
 }
-/* 用工类型互斥：全职只显示月底薪，兼职只显示小时工资 */
+/* 用工类型互斥：全职只显示月底薪，兼职只显示小时工资（hidden 属性 + style.display 双保险，避免 grid 覆盖） */
 function syncBaseLabel(){
   const temp=$('stType').value==='temp';
-  const bw=$('stBaseWrap'); if(bw)bw.hidden=temp;
-  const hw=$('stHourlyWrap'); if(hw)hw.hidden=!temp;
+  const bw=$('stBaseWrap'); if(bw){bw.hidden=temp;bw.style.display=temp?'none':'';}
+  const hw=$('stHourlyWrap'); if(hw){hw.hidden=!temp;hw.style.display=!temp?'none':'';}
   const lab=$('stBaseLabel'); if(lab)lab.textContent='月底薪（元/月）';
 }
 function onTypeChange(){ syncBaseLabel(); }
 function resetStaffForm(){
   editingId=null;
   ['stName','stStart','stBase','stHourly','stRest','stBonus'].forEach(id=>{const el=$(id);if(el)el.value='';});
-  $('stRole').value='售卖员';$('stType').value='full';$('stStatus').value='on';
+  $('stRole').value='售卖员';$('stType').value='full';
   $('staffFormTitle').textContent='添加人员';
   $('btnStaffSave').textContent='保存人员';
   $('btnStaffCancel').hidden=true;
@@ -229,11 +230,11 @@ function resetStaffForm(){
 function fillStaffForm(e){
   editingId=e.id;
   $('stName').value=e.name;$('stRole').value=e.role;$('stType').value=e.type;
-  $('stStatus').value=e.status;$('stBase').value=e.base==null?'':e.base;
+  $('stBase').value=e.base==null?'':e.base;
   $('stHourly').value=e.hourly==null?'':e.hourly;
   $('stBonus').value=e.attBonus==null?'':e.attBonus;
   const ma=(e.monthAtt||{})[staffMonth]||{};
-  $('stRest').value=ma.rest==null?'':ma.rest;
+  $('stRest').value=ma.restLimit==null?'':ma.restLimit;
   $('stStart').value=e.start;
   $('staffFormTitle').textContent='修改人员';
   $('btnStaffSave').textContent='保存修改';
@@ -250,18 +251,19 @@ function staffSave(){
   }else{
     f.id='e'+Math.random().toString(36).slice(2,8);
     f.attend={};
+    f.status='on';
     e=f;
     S.staff.push(f);
     logAdd('staff','新增',f.name);
   }
-  /* 公休天数按当前核算月份保存；留空则回退到每日点休息统计 */
+  /* 可公休天数按当前核算月份保存；留空则不设休息上限 */
   if(e){
     if(!e.monthAtt)e.monthAtt={};
     if(!e.monthAtt[staffMonth])e.monthAtt[staffMonth]={};
     const restVal=$('stRest')?$('stRest').value.trim():'';
     const row=e.monthAtt[staffMonth];
-    if(restVal===''){delete row.rest;}
-    else{row.rest=Number(restVal)||0;}
+    if(restVal===''){delete row.restLimit;}
+    else{row.restLimit=Number(restVal)||0;}
   }
   save(); resetStaffForm(); renderStaff(); toast('已保存');
 }
