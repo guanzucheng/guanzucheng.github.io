@@ -21,16 +21,15 @@ function countAttend(e,m,kind){
   });
   return n;
 }
-/* 月度考勤汇总：手动填的公休/请假天数优先；未填则按每日考勤板统计。实出勤=应出勤-公休-请假 */
+/* 考勤口径：公休可手动调整（填了优先按手动值，留空按每日点休息统计）；请假/旷工按每日考勤板统计；实出勤=应出勤-公休-请假 */
 function attendance(e,m){
   const total=daysInMonth(m);
   const ma=(e.monthAtt||{})[m]||{};
-  const manual=(ma.rest!=null||ma.leave!=null);
-  const rest=manual?(Number(ma.rest)||0):countAttend(e,m,'rest');
-  const leave=manual?(Number(ma.leave)||0):countAttend(e,m,'leave');
+  const rest=ma.rest!=null?(Number(ma.rest)||0):countAttend(e,m,'rest');
+  const leave=countAttend(e,m,'leave');
   const work=Math.max(total-rest-leave,0);
   const hours=Number(ma.hours)||0;
-  return {total,rest,leave,work,manual,hours};
+  return {total,rest,leave,work,hours};
 }
 
 function staffCfg(){
@@ -97,7 +96,6 @@ function renderStaff(){
   renderStaffSummary(rev,pool,on);
   renderStaffList();
   renderAttBoard();
-  renderAttMonthBoard();
   renderPayroll(pool,avg,on);
 }
 
@@ -141,8 +139,20 @@ function renderAttBoard(){
   box.innerHTML=on.map(e=>{
     const cur=(e.attend||{})[attDate]||'';
     const btns=ATT_OPTS.map(([v,lab])=>`<button type="button" class="seg-btn ${cur===v?'on':''}" data-att="${v}" data-id="${e.id}" style="flex:0 1 auto;padding:6px 10px;font-size:12.5px">${lab}</button>`).join('');
-    return `<div class="item"><div class="nm" style="min-width:74px">${escStaff(e.name)}</div><div class="bar">${btns}</div></div>`;
+    const ma=(e.monthAtt||{})[staffMonth]||{};
+    const rest=ma.rest==null?'':ma.rest;
+    const hours=ma.hours==null?'':ma.hours;
+    const hourField=e.type==='temp'?`<label class="mini" style="margin-right:12px">工时(小时) <input type="number" min="0" id="mh-${e.id}" value="${hours}" style="width:64px"></label>`:'';
+    return `<div class="item">
+      <div class="nm" style="min-width:74px">${escStaff(e.name)}</div>
+      <div class="bar">${btns}${hourField}<label class="mini">公休 <input type="number" min="0" id="mr-${e.id}" value="${rest}" style="width:64px"></label></div>
+    </div>`;
   }).join('');
+  on.forEach(e=>{
+    const r=$('mr-'+e.id), h=$('mh-'+e.id);
+    if(r)r.onchange=()=>setMonthAtt(e,'rest',r.value);
+    if(h)h.onchange=()=>setMonthAtt(e,'hours',h.value);
+  });
 }
 
 function renderPayroll(pool,avg,on){
@@ -171,40 +181,14 @@ function renderPayroll(pool,avg,on){
   if(sum)sum.textContent=`固定部分合计 ${money(sf)} 元，缺勤扣款 ${money(ded)} 元，提成池 ${money(pool)} 元（人均 ${money(avg)} 元），应发合计 ${money(Math.round((sf+pool)*100)/100)} 元。`;
 }
 
-/* 本月考勤汇总录入：公休、请假/旷工天数；留空则回退到每日考勤板统计 */
+/* 月度考勤录入：公休天数、兼职工时（请假/旷工由每日考勤板统计，不在此录） */
 function setMonthAtt(e,key,val){
   if(!e.monthAtt)e.monthAtt={};
-  if(!e.monthAtt[staffMonth])e.monthAtt[staffMonth]={rest:0,leave:0};
+  if(!e.monthAtt[staffMonth])e.monthAtt[staffMonth]={};
   const row=e.monthAtt[staffMonth];
   if(val===''){delete row[key];}
   else{const n=Number(val);row[key]=isNaN(n)?0:n;}
   save(); renderStaff();
-}
-function renderAttMonthBoard(){
-  const box=$('attMonthBoard'); if(!box)return;
-  const on=S.staff.filter(e=>e.status==='on');
-  if(!on.length){box.innerHTML='<div class="mini">暂无在职人员。</div>';return;}
-  box.innerHTML=on.map(e=>{
-    const ma=(e.monthAtt||{})[staffMonth]||{};
-    const rest=ma.rest==null?'':ma.rest;
-    const leave=ma.leave==null?'':ma.leave;
-    const hours=ma.hours==null?'':ma.hours;
-    const hourField=e.type==='temp'?`<label class="mini" style="margin-right:12px">工时(小时) <input type="number" min="0" id="mh-${e.id}" value="${hours}" style="width:64px"></label>`:'';
-    return `<div class="item">
-      <div class="nm" style="min-width:74px">${escStaff(e.name)}</div>
-      <div class="bar">
-        ${hourField}
-        <label class="mini" style="margin-right:12px">公休 <input type="number" min="0" id="mr-${e.id}" value="${rest}" style="width:64px"></label>
-        <label class="mini">请假/旷工 <input type="number" min="0" id="ml-${e.id}" value="${leave}" style="width:64px"></label>
-      </div>
-    </div>`;
-  }).join('');
-  on.forEach(e=>{
-    const r=$('mr-'+e.id), l=$('ml-'+e.id), h=$('mh-'+e.id);
-    if(r)r.onchange=()=>setMonthAtt(e,'rest',r.value);
-    if(l)l.onchange=()=>setMonthAtt(e,'leave',l.value);
-    if(h)h.onchange=()=>setMonthAtt(e,'hours',h.value);
-  });
 }
 
 function collectStaffForm(){
