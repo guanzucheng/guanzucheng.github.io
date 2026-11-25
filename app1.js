@@ -144,7 +144,7 @@ const PRESET_STAFF_COUNT=13;
 function presetStaff(){
   return Array.from({length:PRESET_STAFF_COUNT},(_,i)=>({
     id:'e'+(i+1), name:'员工'+(i+1), role:'售卖员', type:'full', status:'on',
-    base:0, phone:'', start:'', attend:{}, monthAtt:{}
+    base:0, hourly:null, phone:'', start:'', attend:{}, monthAtt:{}
   }));
 }
 
@@ -159,6 +159,7 @@ function normalizeStaff(e){
   e.start=e.start||'';
   e.status=(e.status==='off'?'off':'on');
   e.base=(e.base==null?null:Number(e.base));
+  e.hourly=(e.hourly==null?null:Number(e.hourly));
   e.comm=(e.comm==null?0:Number(e.comm));
   e.attend=(e.attend&&typeof e.attend==='object')?e.attend:{};
   e.monthAtt=(e.monthAtt&&typeof e.monthAtt==='object')?e.monthAtt:{};
