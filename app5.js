@@ -77,6 +77,7 @@ function staffFixedTotal(m){
 }
 
 function renderStaff(){
+  syncBaseLabel();
   const m=$('staffMonth'); if(m)m.value=staffMonth;
   const rev=monthRevenue(staffMonth);
   const revEl=$('staffMonthRev'); if(revEl)revEl.value=money(rev)+' 元';
@@ -118,7 +119,7 @@ function renderStaffList(){
   box.innerHTML=S.staff.map(e=>{
     const tag=e.type==='temp'?'兼职':'全职';
     const st=e.status==='off'?'<span class="tag warn">离职</span>':'<span class="tag ok">在职</span>';
-    const baseTxt=e.type==='temp'?(e.hourly?('时薪 '+money(e.hourly||0)+' 元/时'):('日薪 '+money(e.base||0)+' 元/天')):('底薪 '+money(e.base||0)+' 元/月');
+    const baseTxt=e.type==='temp'?(e.hourly?('时薪 '+money(e.hourly||0)+' 元/时'):'未填时薪'):('底薪 '+money(e.base||0)+' 元/月');
     return `<div class="item">
       <div>
         <div class="nm">${escStaff(e.name)} ${st}</div>
@@ -209,20 +210,23 @@ function renderAttMonthBoard(){
 function collectStaffForm(){
   const type=$('stType').value;
   const hv=$('stHourly')?$('stHourly').value.trim():'';
+  const bv=$('stBase')?$('stBase').value.trim():'';
   return {
     name:$('stName').value.trim(),
     role:$('stRole').value,
     type,
     status:$('stStatus').value,
-    base:Number($('stBase').value)||0,
+    base:type==='full'?(Number(bv)||0):0,
     hourly:type==='temp'&&hv!==''?Number(hv):null,
     start:$('stStart').value
   };
 }
+/* 用工类型互斥：全职只显示月底薪，兼职只显示小时工资 */
 function syncBaseLabel(){
   const temp=$('stType').value==='temp';
-  const lab=$('stBaseLabel'); if(lab)lab.textContent=temp?'日工资（元/天）':'月底薪（元/月）';
+  const bw=$('stBaseWrap'); if(bw)bw.hidden=temp;
   const hw=$('stHourlyWrap'); if(hw)hw.hidden=!temp;
+  const lab=$('stBaseLabel'); if(lab)lab.textContent='月底薪（元/月）';
 }
 function onTypeChange(){ syncBaseLabel(); }
 function resetStaffForm(){
