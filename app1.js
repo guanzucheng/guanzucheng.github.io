@@ -139,6 +139,15 @@ function syncPresetCards(o){
   o.costCards=o.costCards.map(c=>byId[c.id]||c);
 }
 
+/* 通用占位人员：模板不带任何真实门店人名与历史考勤，各店自行改名、填工资和考勤；占位行可增删 */
+const PRESET_STAFF_COUNT=13;
+function presetStaff(){
+  return Array.from({length:PRESET_STAFF_COUNT},(_,i)=>({
+    id:'e'+(i+1), name:'员工'+(i+1), role:'售卖员', type:'full', status:'on',
+    base:0, phone:'', start:'', attend:{}, monthAtt:{}
+  }));
+}
+
 function normalizeStaff(e){
   if(!e||typeof e!=='object')return e;
   if(!e.id)e.id='e'+Math.random().toString(36).slice(2,8);
@@ -152,6 +161,7 @@ function normalizeStaff(e){
   e.base=(e.base==null?null:Number(e.base));
   e.comm=(e.comm==null?0:Number(e.comm));
   e.attend=(e.attend&&typeof e.attend==='object')?e.attend:{};
+  e.monthAtt=(e.monthAtt&&typeof e.monthAtt==='object')?e.monthAtt:{};
   return e;
 }
 
@@ -175,7 +185,7 @@ function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
 function seed(){
-  return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:[], staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u4'};
+  return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:presetStaff(), staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u5'};
 }
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
@@ -190,6 +200,10 @@ function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.par
   o.materials=mergeMaterials(o.materials);
   /* 物料单位有过调整：只把单位发生变化的项清回未建账，单位没变的库存与单价照旧保留 */
   if(o.mig!=='u4'){o.materials.forEach(m=>{if(oldUnit[m.n]&&oldUnit[m.n]!==m.unit){m.stock=null;m.price=defaultPrice(m.n);}});o.mig='u4';saveRaw(o);}
+  /* u5：人员字段兼容；已在用的账本保留本机名单，不自动塞人 */
+  if(o.mig!=='u5'){
+    o.mig='u5';saveRaw(o);
+  }
   return o;}}catch(e){}return seed();}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('存不下，可能浏览器空间满了');}}
 
