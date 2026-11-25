@@ -316,7 +316,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：人员管理 ===== -->
 <section id="view-staff" hidden>
   <h1 class="title">人员<span>全职 / 兼职，底薪扣缺勤款加提成台账</span></h1>
-  <div class="note">全职按月底薪扣缺勤款＋提成；兼职可填小时工资×本月工时结算，未填工时则按日工资×出勤天数＋提成。缺勤扣款＝日工资（基本工资÷当月天数）×请假/旷工天数，公休带薪不扣。提成来自超出保本点的超额利润：按运营成本算出月保本营业额，超出部分按设定比例提为奖金池，再按在岗人数均分。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
+  <div class="note">全职按月底薪扣缺勤款＋全勤奖＋提成；兼职可填小时工资×本月工时结算，未填工时则按日工资×出勤天数＋提成。缺勤扣款＝日工资（基本工资÷当月天数）×请假天数，公休带薪不扣。当月无请假即可领全勤奖。提成来自超出保本点的超额利润：按运营成本算出月保本营业额，超出部分按设定比例提为奖金池，再按在岗人数均分。考勤与工资只存在这台设备，合同、社保、正式发薪不在本台账范围。</div>
   <div class="card">
     <div class="row three" id="staffSummary"></div>
   </div>
@@ -324,7 +324,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <h2>每日考勤</h2>
     <div class="row two">
       <div class="field"><label>日期</label><input type="date" id="attDate"></div>
-      <div class="field"><label>说明</label><input type="text" value="点选当天状态；右侧可调公休天数、兼职工时，底部工资表实时更新" readonly></div>
+      <div class="field"><label>说明</label><input type="text" value="点选当天状态：出勤 / 休息 / 请假；公休天数、全勤奖在下方人员表单调整，底部工资表实时更新" readonly></div>
     </div>
     <div class="list" id="attBoard" style="margin-top:10px"></div>
   </div>
@@ -372,6 +372,10 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <div class="field"><label>小时工资（元/时）</label><input type="number" id="stHourly" inputmode="decimal" placeholder="0"></div>
     </div>
     <div class="row two" style="margin-top:10px">
+      <div class="field"><label>公休天数（天/月）</label><input type="number" id="stRest" min="0" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>全勤奖（元/月）</label><input type="number" id="stBonus" min="0" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="row two" style="margin-top:10px">
       <div class="field"><label>入职日期（可选）</label><input type="date" id="stStart"></div>
     </div>
     <div class="bar" style="margin-top:12px">
@@ -381,12 +385,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="list" id="staffList" style="margin-top:10px"></div>
   </div>
   <div class="card">
-    <h2>工资结算（基本工资 − 缺勤扣款 ＋ 提成）</h2>
-    <div class="mini" style="margin-bottom:8px">日工资＝基本工资÷当月天数；缺勤扣款＝日工资×请假/旷工天数；公休带薪不扣；兼职按小时结＝小时工资×本月工时；应发＝固定工资＋人均提成。</div>
+    <h2>工资结算（基本工资 − 缺勤扣款 ＋ 全勤奖 ＋ 提成）</h2>
+    <div class="mini" style="margin-bottom:8px">日工资＝基本工资÷当月天数；缺勤扣款＝日工资×请假天数；公休带薪不扣；当月无请假即发全勤奖；兼职按小时结＝小时工资×本月工时；应发＝固定工资＋全勤奖＋人均提成。</div>
     <div style="overflow-x:auto">
       <table>
-        <colgroup><col style="width:14%"><col style="width:12%"><col style="width:9%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:13%"><col style="width:13%"><col style="width:13%"></colgroup>
-        <thead><tr><th>姓名</th><th>基本工资</th><th>应出勤</th><th>公休</th><th>请假/旷工</th><th>实出勤</th><th>缺勤扣款</th><th>提成</th><th>应发</th></tr></thead>
+        <colgroup><col style="width:12%"><col style="width:11%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>
+        <thead><tr><th>姓名</th><th>基本工资</th><th>应出勤</th><th>公休</th><th>请假</th><th>实出勤</th><th>缺勤扣款</th><th>全勤奖</th><th>提成</th><th>应发</th></tr></thead>
         <tbody id="payBody"></tbody>
       </table>
     </div>
@@ -500,12 +504,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261125d"></script>
-<script src="cards-b.js?v=20261125d"></script>
-<script src="app1.js?v=20261125d"></script>
-<script src="app2.js?v=20261125d"></script>
-<script src="app3.js?v=20261125d"></script>
-<script src="app5.js?v=20261125d"></script>
-<script src="app4.js?v=20261125d"></script>
+<script src="cards-a.js?v=20261125e"></script>
+<script src="cards-b.js?v=20261125e"></script>
+<script src="app1.js?v=20261125e"></script>
+<script src="app2.js?v=20261125e"></script>
+<script src="app3.js?v=20261125e"></script>
+<script src="app5.js?v=20261125e"></script>
+<script src="app4.js?v=20261125e"></script>
 </body>
 </html>
