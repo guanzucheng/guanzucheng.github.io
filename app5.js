@@ -45,7 +45,8 @@ function beMonthly(){
   const be=fixed>0?Math.round(fixed/0.65*100)/100:0;
   return {fixed,be};
 }
-function monthProfit(rev){const {be}=beMonthly();return Math.max(Math.round((rev-be)*100)/100,0);}
+/* 超额利润（超额毛利）：当月营业额×65% 毛利 − 固定开支；不足保本记 0 */
+function monthProfit(rev){const {fixed}=beMonthly();return Math.max(Math.round((rev*0.65-fixed)*100)/100,0);}
 
 function staffWage(e,m,avgComm){
   const att=attendance(e,m);
@@ -218,6 +219,13 @@ function syncBaseLabel(){
   const lab=$('stBaseLabel'); if(lab)lab.textContent='月底薪（元/月）';
 }
 function onTypeChange(){ syncBaseLabel(); }
+/* 人员页分段：每日考勤 / 添加人员，二选一显示 */
+function switchStaffSeg(seg){
+  const att=$('seg-staff-att'), form=$('seg-staff-form');
+  if(att)att.hidden=seg!=='att';
+  if(form)form.hidden=seg!=='form';
+  document.querySelectorAll('[data-staffseg]').forEach(b=>b.classList.toggle('on',b.dataset.staffseg===seg));
+}
 function resetStaffForm(){
   editingId=null;
   ['stName','stStart','stBase','stHourly','stRest','stBonus'].forEach(id=>{const el=$(id);if(el)el.value='';});
@@ -240,6 +248,7 @@ function fillStaffForm(e){
   $('btnStaffSave').textContent='保存修改';
   $('btnStaffCancel').hidden=false;
   syncBaseLabel();
+  switchStaffSeg('form');
 }
 function staffSave(){
   const f=collectStaffForm();
@@ -299,6 +308,7 @@ function bindStaffEvents(){
   const mon=$('staffMonth'); if(mon)mon.addEventListener('change',()=>{staffMonth=mon.value||curMonthStr();renderStaff();});
   const ad=$('attDate'); if(ad)ad.addEventListener('change',()=>{attDate=ad.value||todayStr();renderAttBoard();});
   const ty=$('stType'); if(ty)ty.addEventListener('change',onTypeChange);
+  document.querySelectorAll('[data-staffseg]').forEach(b=>b.onclick=()=>switchStaffSeg(b.dataset.staffseg));
   const pr=$('stPoolRate'); if(pr)pr.addEventListener('change',savePoolRate);
   const bs=$('btnStaffSave'); if(bs)bs.addEventListener('click',staffSave);
   const cc=$('btnStaffCancel'); if(cc)cc.addEventListener('click',resetStaffForm);
