@@ -87,6 +87,7 @@ nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(251,249,245,.95);ba
 .combo-list .empty{padding:10px 12px;color:var(--ink-3);font-size:13px}
 table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13.5px}
 th,td{padding:8px 6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.pay-table th,.pay-table td{white-space:nowrap;padding:8px 10px}
 th{color:var(--ink-2);font-weight:600;background:#f1f6f2}
 .note{background:#f0f7f1;border:1px solid #cfe6d7;color:#1d6b33;border-radius:8px;padding:10px 12px;font-size:12.5px;margin:14px 0}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -330,15 +331,13 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <div class="list" id="attBoard" style="margin-top:10px"></div>
   </div>
   <div class="card">
+    <h2>提成设置（按超额利润均分）</h2>
+    <p class="hint">先按运营成本算出月保本营业额；超出保本点的部分为超额利润，按下面比例提为奖金池，再按在岗人数平均分到每人。未超保本点时提成池为 0。</p>
     <div class="row two">
       <div class="field"><label>核算月份</label><input type="month" id="staffMonth"></div>
       <div class="field"><label>当月营业额（取自日报）</label><input type="text" id="staffMonthRev" readonly></div>
     </div>
-  </div>
-  <div class="card">
-    <h2>提成设置（按超额利润均分）</h2>
-    <p class="hint">先按运营成本算出月保本营业额；超出保本点的部分为超额利润，按下面比例提为奖金池，再按在岗人数平均分到每人。未超保本点时提成池为 0。</p>
-    <div class="row two">
+    <div class="row two" style="margin-top:10px">
       <div class="field"><label>奖金池比例（占超额利润 %）</label><input type="number" id="stPoolRate" inputmode="decimal" placeholder="例如 20"></div>
       <div class="field"><label>月保本营业额（取自运营成本）</label><div id="beMonthVal" class="val" style="font-weight:700"></div></div>
     </div>
@@ -384,8 +383,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
     <h2>工资结算（基本工资 − 缺勤扣款 ＋ 全勤奖 ＋ 提成）</h2>
     <div class="mini" style="margin-bottom:8px">日工资＝基本工资÷当月天数；缺勤扣款＝日工资×请假天数；公休带薪不扣；不请假且实际休息未超可公休天数即发全勤奖；兼职按小时结＝小时工资×本月工时；应发＝固定工资＋全勤奖＋人均提成。</div>
     <div style="overflow-x:auto">
-      <table>
-        <colgroup><col style="width:12%"><col style="width:11%"><col style="width:8%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>
+      <table class="pay-table" style="min-width:820px">
+        <colgroup><col style="width:10%"><col style="width:12%"><col style="width:8%"><col style="width:7%"><col style="width:7%"><col style="width:8%"><col style="width:12%"><col style="width:11%"><col style="width:11%"><col style="width:12%"></colgroup>
         <thead><tr><th>姓名</th><th>基本工资</th><th>应出勤</th><th>公休</th><th>请假</th><th>实出勤</th><th>缺勤扣款</th><th>全勤奖</th><th>提成</th><th>应发</th></tr></thead>
         <tbody id="payBody"></tbody>
       </table>
@@ -500,12 +499,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261125f"></script>
-<script src="cards-b.js?v=20261125f"></script>
-<script src="app1.js?v=20261125f"></script>
-<script src="app2.js?v=20261125f"></script>
-<script src="app3.js?v=20261125f"></script>
-<script src="app5.js?v=20261125f"></script>
-<script src="app4.js?v=20261125f"></script>
+<script src="cards-a.js?v=20261125g"></script>
+<script src="cards-b.js?v=20261125g"></script>
+<script src="app1.js?v=20261125g"></script>
+<script src="app2.js?v=20261125g"></script>
+<script src="app3.js?v=20261125g"></script>
+<script src="app5.js?v=20261125g"></script>
+<script src="app4.js?v=20261125g"></script>
 </body>
 </html>
