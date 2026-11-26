@@ -1,6 +1,7 @@
 /* ============ 人员管理（全职 / 兼职，底薪扣缺勤款 + 超额利润提成均分） ============ */
 const STAFF_ROLES=['店长','烧汤师傅','面点师傅','油炸师傅','售卖员','收银','收碗'];
 const SKILLS=['烧汤','煎包','面点','油炸','售卖'];
+const MANAGER='店长';
 const ATT_OPTS=[['work','出勤'],['rest','休息'],['leave','请假']];
 let staffMonth=curMonthStr();
 let attDate=todayStr();
@@ -119,10 +120,11 @@ function renderStaffSummary(rev,pool,on){
 }
 
 function skillTags(e){
-  const main=SKILLS.includes(e.role)?e.role:'';
+  const main=e.role||'';
   const extra=(Array.isArray(e.skills)?e.skills:[]).filter(s=>SKILLS.includes(s)&&s!==main);
   let html='';
-  if(main)html+=`<span class="tag ok">${escStaff(main)}</span>`;
+  if(main===MANAGER)html+=`<span class="tag manager">${escStaff(main)}</span>`;
+  else if(SKILLS.includes(main))html+=`<span class="tag ok">${escStaff(main)}</span>`;
   extra.forEach(s=>{html+=`<span class="tag gray">${escStaff(s)}</span>`;});
   return html;
 }
