@@ -143,7 +143,7 @@ function syncPresetCards(o){
 const PRESET_STAFF_COUNT=13;
 function presetStaff(){
   return Array.from({length:PRESET_STAFF_COUNT},(_,i)=>({
-    id:'e'+(i+1), name:'员工'+(i+1), role:'售卖员', type:'full', status:'on',
+    id:'e'+(i+1), name:'员工'+(i+1), role:'售卖', type:'full', status:'on',
     base:0, hourly:null, attBonus:null, phone:'', start:'', attend:{}, monthAtt:{}
   }));
 }
@@ -154,9 +154,13 @@ function normalizeStaff(e){
   e.name=e.name||'';
   const ROLE_MAP={'厨师':'烧汤师傅','帮工':'售卖员','杂工':'收碗','临时工':'售卖员'};
   e.role=ROLE_MAP[e.role]||e.role||'售卖员';
+  const ROLE_SKILL={'烧汤师傅':'烧汤','面点师傅':'面点','油炸师傅':'油炸','售卖员':'售卖'};
+  if(ROLE_SKILL[e.role])e.role=ROLE_SKILL[e.role];
   e.type=(e.type==='temp'?'temp':'full');
   e.phone=e.phone||'';
   e.start=e.start||'';
+  e.leaveDate=e.leaveDate||null;
+  e.skills=Array.isArray(e.skills)?e.skills.filter(s=>typeof s==='string'):[];
   e.status=(e.status==='off'?'off':'on');
   e.base=(e.base==null?null:Number(e.base));
   e.hourly=(e.hourly==null?null:Number(e.hourly));
