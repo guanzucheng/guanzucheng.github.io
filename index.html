@@ -104,7 +104,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 /* 入口密码门禁 */
 #lockScreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
 #lockScreen[hidden]{display:none}
-.lock-box{width:100%;max-width:340px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+.lock-box{width:100%;max-width:340px;background:#fff;border:1px solid var(--line);border-radius:var(r);padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.1)}
 .lock-brand{font-size:22px;font-weight:800;letter-spacing:2px;text-align:center;color:var(--accent)}
 .lock-sub{text-align:center;color:var(--ink-3);font-size:13px;margin:8px 0 18px}
 #lockPwd{margin-bottom:10px}
@@ -291,13 +291,13 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <!-- ===== 视图：成本卡 ===== -->
 <section id="view-card" hidden>
   <h1 class="title">成本卡<span>每碗用料、成本与真实毛利</span></h1>
-  <div class="note">顶部下拉选择产品；总部产品只改当地进价，配方用量保持一致；本店自创新品可点「＋新增产品」，自己填配方用量和进价，售价填好后单份成本、毛利和毛利率自动算。数据只存在这台设备。</div>
+  <div class="note">左「产品卡」看配方与单份成本；右「产品定价」给各产品填售价，毛利率随动；最下方自动汇总综合毛利，作为运营成本保本测算的依据。总部产品只改当地进价、配方用量保持一致；本店自创新品可点「＋新增产品」自己填用量和进价。数据只存在这台设备。</div>
   <div class="card" id="cardBox"></div>
 </section>
 
 <!-- ===== 视图：运营成本 ===== -->
 <section id="view-cost" hidden>
-  <h1 class="title">运营成本<span>固定开支，按 65% 毛利率算每天保本营业额</span></h1>
+  <h1 class="title">运营成本<span>固定开支，按成本卡实际综合毛利率算每天保本营业额</span></h1>
   <div class="card">
     <h2>月度固定开支（元 / 月）</h2>
     <p class="hint">房租（含物业费）、水电费、物流费、其它按月填写；人工费自动取自人员模块的固定工资合计（全职底薪扣缺勤款＋兼职时薪×工时或日薪×出勤天数），提成不计入保本固定成本。数字只存在这台设备</p>
@@ -313,7 +313,7 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
   <div class="card">
     <h2>盈亏平衡点</h2>
     <div class="list" id="costResult"></div>
-    <p class="hint" style="margin-top:10px">测算口径（默认综合毛利率 65%）：月保本营业额 = 月固定开支 ÷ 65%；日均保本 = 月保本营业额 ÷ 30 天。</p>
+    <p class="hint" style="margin-top:10px">测算口径：综合毛利率取成本卡已定价产品的金额加权毛利（毛利额合计 ÷ 售价合计）；月保本营业额 = 月固定开支 ÷ 综合毛利率，日均保本 = 月保本营业额 ÷ 30 天。产品还没定价时，保本额暂不显示。</p>
   </div>
 </section>
 
@@ -536,12 +536,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261126d"></script>
-<script src="cards-b.js?v=20261126d"></script>
-<script src="app1.js?v=20261126d"></script>
-<script src="app2.js?v=20261126d"></script>
-<script src="app3.js?v=20261126d"></script>
-<script src="app5.js?v=20261126d"></script>
-<script src="app4.js?v=20261126d"></script>
+<script src="cards-a.js?v=20261126e"></script>
+<script src="cards-b.js?v=20261126e"></script>
+<script src="app1.js?v=20261126e"></script>
+<script src="app2.js?v=20261126e"></script>
+<script src="app3.js?v=20261126e"></script>
+<script src="app5.js?v=20261126e"></script>
+<script src="app4.js?v=20261126e"></script>
 </body>
 </html>
