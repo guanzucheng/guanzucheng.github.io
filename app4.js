@@ -129,10 +129,23 @@ function saveShop(){
   S.shopName=v; save(); $('shopName').textContent=v; toast('已保存');
 }
 function resetAll(){
-  if(!confirm('会清空本机所有日报、库存和盘点记录，确定？')){return;}
+  const m=$('resetModal'); if(!m){doReset();return;}
+  $('resetPwd').value='';
+  $('resetErr').textContent='';
+  m.hidden=false;
+  $('resetPwd').focus();
+}
+function doReset(){
   S=seed(); save(); $('shopName').textContent=S.shopName; $('setShop').value=S.shopName;
   renderAll(); toast('已清空');
 }
+function confirmReset(){
+  const v=$('resetPwd').value.trim();
+  if(v!==ACCESS_PWD){ $('resetErr').textContent='密码不对，请核对后重试'; $('resetPwd').select(); return; }
+  $('resetModal').hidden=true;
+  doReset();
+}
+function closeReset(){ $('resetModal').hidden=true; }
 
 /* ============ 成本卡 ============ */
 function cardRowAmt(row){
@@ -277,6 +290,9 @@ $('btnExpStaff').onclick=expStaff;
 $('btnImpPrice').onclick=importPrices;
 $('btnExpPrice').onclick=expPrices;
 $('btnReset').onclick=resetAll;
+$('resetConfirm').onclick=confirmReset;
+$('resetCancel').onclick=closeReset;
+$('resetPwd').onkeydown=e=>{if(e.key==='Enter')confirmReset();};
 $('dlCopy').onclick=copyDlText;
 $('dlClose').onclick=closeDlPanel;
 $('stCat').onchange=renderStock;
