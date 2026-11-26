@@ -1,2 +1,2 @@
-probe line "double" and 'single'
-second line
+line one "q"
+line two 's'
