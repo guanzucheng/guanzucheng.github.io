@@ -1,3 +1,0 @@
-const need=s.indexOf('"')>=0||s.indexOf('\n')>=0;
-function shopUnitOfPu(pu){ return String(pu||'').replace(/^元\//,'').trim(); }
-function escHtml(s){return String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));}
