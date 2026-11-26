@@ -169,6 +169,10 @@ function cardStats(card){
   const rate=hasSale&&sale>0?gross/sale*100:null;
   return {batches:batches,total:Math.round(total*1000)/1000,unit:Math.round(unit*1000)/1000,sale:hasSale?sale:null,gross:gross,rate:rate};
 }
+function isShopCard(c){ return !!c && c.source==='shop'; }
+function shopUnitOfPu(pu){ return String(pu||'').replace(/^元\//,'').trim(); }
+function escHtml(s){return String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 function renderCards(){
   const box=$('cardBox'); if(!box) return;
   const cards=S.costCards||[];
@@ -178,16 +182,31 @@ function renderCards(){
   const card=cards[idx];
   const st=cardStats(card);
   const unit=card.unit||'份';
+  const shop=isShopCard(card);
 
-  const opts=cards.map(function(c){return '<option value="'+c.id+'"'+(c.id===card.id?' selected':'')+'>'+c.name+'</option>';}).join('');
+  const opts=cards.map(function(c){
+    const lab=isShopCard(c)?('✦ '+c.name+'（门店新品）'):c.name;
+    return '<option value="'+c.id+'"'+(c.id===card.id?' selected':'')+'>'+escHtml(lab)+'</option>';
+  }).join('');
 
   let rowsHtml;
   if(!card.rows.length){
-    rowsHtml='<tr><td colspan="6" class="mini">暂无原料明细，标准单份成本 '+r3(card.unitCost||0)+' 元/'+unit+'</td></tr>';
+    rowsHtml='<tr><td colspan="'+(shop?7:6)+'" class="mini">'+(shop?'还没加原料，点下面“加一行原料”逐项录入用量和进价':'暂无原料明细，标准单份成本 '+r3(card.unitCost||0)+' 元/'+unit)+'</td></tr>';
   }else{
     rowsHtml=card.rows.map(function(r,i){
       const amt=cardRowAmt(r);
       const per=st.batches?amt/st.batches:null;
+      if(shop){
+        return '<tr>'+
+          '<td><input type="text" value="'+escHtml(r.name||'')+'" data-ri="'+i+'" data-f="name" placeholder="原料名"></td>'+
+          '<td><input type="number" inputmode="decimal" value="'+(r.price==null?'':r.price)+'" data-ri="'+i+'" data-f="price" placeholder="进价"></td>'+
+          '<td><input type="text" value="'+escHtml(r.pu||'元/斤')+'" data-ri="'+i+'" data-f="pu" placeholder="元/斤"></td>'+
+          '<td><input type="number" inputmode="decimal" value="'+(r.qty==null?'':r.qty)+'" data-ri="'+i+'" data-f="qty" placeholder="用量"></td>'+
+          '<td>'+r3(amt)+'</td>'+
+          '<td>'+(per==null?'—':r3(per))+'</td>'+
+          '<td><button type="button" class="btn plain" data-delrow="'+i+'" style="padding:4px 8px;font-size:12px">删</button></td>'+
+        '</tr>';
+      }
       const priceIn=(r.price==null?'':r.price);
       const pu=r.pu||'—';
       const qt=r.qt||(r.qty!=null?r.qty:'—');
@@ -205,12 +224,33 @@ function renderCards(){
   const rateHtml=st.rate==null?'<span class="mini">待填售价</span>':'<span class="'+(st.rate>=0?'tag ok':'tag warn')+'">'+Math.round(st.rate*10)/10+'%</span>';
   const grossHtml=st.gross==null?'<span class="mini">待填售价</span>':money(st.gross)+' 元';
 
+  const headActions=shop
+    ? '<div class="bar" style="gap:6px"><button type="button" class="btn plain" id="btnCardRename" style="padding:6px 10px;font-size:12.5px">改名</button><button type="button" class="btn plain" id="btnCardDel" style="padding:6px 10px;font-size:12.5px;color:var(--warn)">删除</button></div>'
+    : '';
+  const shopTag=shop?'<span class="tag" style="background:#e57232;color:#fff;font-weight:700;margin-left:6px">门店新品</span>':'';
+  const headCol=shop
+    ? '<colgroup><col style="width:21%"><col style="width:15%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:8%"></colgroup>'
+    : '<colgroup><col style="width:23%"><col style="width:17%"><col style="width:15%"><col style="width:19%"><col style="width:13%"><col style="width:13%"></colgroup>';
+  const headTh=shop
+    ? '<th>原料</th><th>进价</th><th>单价单位</th><th>用量</th><th>一批金额</th><th>每份成本</th><th></th>'
+    : '<th>原料</th><th>单价(可调)</th><th>单价单位</th><th>配方用量(固定)</th><th>一批金额</th><th>每份成本</th>';
+  const secondField=shop
+    ? '<div class="field"><label>一批出多少份（'+unit+'）</label><input type="number" id="cardBatches" inputmode="decimal" value="'+(card.batches==null?'':card.batches)+'" placeholder="例如 40"></div>'
+    : '<div class="field"><label>一批总成本</label><input type="text" value="'+r3(st.total)+' 元'+(st.batches?' / '+st.batches+' '+unit:'')+'" readonly></div>';
+  const addRowBtn=shop?'<div style="margin-top:10px"><button type="button" class="btn ghost" id="btnCardAddRow" style="width:auto;padding:8px 14px">＋加一行原料</button></div>':'';
+  const hint=shop
+    ? '原料名、用量和进价按本店实际称量填写；进价×用量自动算一批金额，一批合计÷份数得单份成本，售价填好后自动算毛利与毛利率。'
+    : '单价按当地进价修改；配方用量与总部保持一致、不可改；金额、单份成本、毛利与毛利率自动重算。水、大料等没有单价的项按固定分摊金额计算。';
+
   box.innerHTML=
-    '<div class="field" style="margin-bottom:12px"><label>选择产品</label><select id="cardSel">'+opts+'</select></div>'+
-    '<div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">'+
-      '<h2 style="margin:0">'+card.name+'</h2>'+
-      '<span class="mini">'+(card.basis||'')+(card.basis?' · ':'')+'按'+unit+'计</span>'+
+    '<div class="bar" style="margin-bottom:12px;justify-content:space-between;gap:10px;align-items:end">'+
+      '<div class="field" style="flex:1;margin:0"><label>选择产品</label><select id="cardSel">'+opts+'</select></div>'+
+      '<button type="button" class="btn ghost" id="btnCardNew" style="width:auto;padding:10px 14px;white-space:nowrap">＋新增产品</button>'+
     '</div>'+
+    '<div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">'+
+      '<h2 style="margin:0">'+escHtml(card.name)+shopTag+'</h2>'+headActions+
+    '</div>'+
+    '<div class="bar" style="margin-top:4px"><span class="mini">'+escHtml(card.basis||'')+(card.basis?' · ':'')+'按'+unit+'计</span></div>'+
     '<div class="row three" style="margin-top:12px">'+
       '<div class="item"><div class="nm">单份成本（元/'+unit+'）</div><div class="val">'+r3(st.unit)+'</div></div>'+
       '<div class="item"><div class="nm">单份毛利</div><div class="val">'+grossHtml+'</div></div>'+
@@ -218,29 +258,115 @@ function renderCards(){
     '</div>'+
     '<div class="row two" style="margin-top:10px">'+
       '<div class="field"><label>售价（元/'+unit+'，自己填）</label><input type="number" id="cardSale" inputmode="decimal" value="'+(card.sale==null?'':card.sale)+'" placeholder="例如 8"></div>'+
-      '<div class="field"><label>一批总成本</label><input type="text" value="'+r3(st.total)+' 元'+(st.batches?' / '+st.batches+' '+unit:'')+'" readonly></div>'+
+      secondField+
     '</div>'+
     '<div style="overflow-x:auto;margin-top:12px">'+
-      '<table>'+
-        '<colgroup><col style="width:23%"><col style="width:17%"><col style="width:15%"><col style="width:19%"><col style="width:13%"><col style="width:13%"></colgroup>'+
-        '<thead><tr><th>原料</th><th>单价(可调)</th><th>单价单位</th><th>配方用量(固定)</th><th>一批金额</th><th>每份成本</th></tr></thead>'+
-        '<tbody>'+rowsHtml+'</tbody>'+
+      '<table>'+headCol+'<thead><tr>'+headTh+'</tr></thead><tbody>'+rowsHtml+'</tbody>'+
       '</table>'+
     '</div>'+
-    '<p class="hint" style="margin-top:10px">单价按当地进价修改；配方用量与总部保持一致、不可改；金额、单份成本、毛利与毛利率自动重算。水、大料等没有单价的项按固定分摊金额计算。</p>';
+    addRowBtn+
+    '<p class="hint" style="margin-top:10px">'+hint+'</p>';
 
   $('cardSel').onchange=function(){S.costSel=$('cardSel').value;save();renderCards();};
   $('cardSale').onchange=function(){const v=$('cardSale').value;card.sale=(v===''?null:Number(v));save();renderCards();};
-  box.querySelectorAll('input[data-ri]').forEach(function(inp){
-    inp.onchange=function(){
-      const ri=Number(inp.dataset.ri),v=inp.value;
-      const row=card.rows[ri];
-      row.price=(v===''?null:Number(v));
-      if(row.price!=null&&row.qty!=null) row.amt=Math.round(row.price*row.qty*1000)/1000;
-      card.edited=true;
+  $('btnCardNew').onclick=function(){openCardModal(null);};
+
+  if(shop){
+    const bIn=$('cardBatches');
+    if(bIn)bIn.onchange=function(){
+      const v=bIn.value; card.batches=(v===''?null:Number(v));
+      card.basis=card.batches?('一批 '+card.batches+' '+unit):'门店自制';
       save();renderCards();
     };
-  });
+    box.querySelectorAll('input[data-ri]').forEach(function(inp){
+      inp.onchange=function(){
+        const ri=Number(inp.dataset.ri),f=inp.dataset.f,row=card.rows[ri];
+        let v=inp.value;
+        if(f==='name'){row.name=v.trim();}
+        else if(f==='pu'){row.pu=v.trim()||'元/斤';}
+        else if(f==='qty'){row.qty=(v===''?null:Number(v));}
+        else if(f==='price'){row.price=(v===''?null:Number(v));}
+        if(row.qty!=null){row.qt=row.qty+' '+(shopUnitOfPu(row.pu)||'');}
+        if(row.price!=null&&row.qty!=null) row.amt=Math.round(row.price*row.qty*1000)/1000;
+        else row.amt=0;
+        save();renderCards();
+      };
+    });
+    const ar=$('btnCardAddRow'); if(ar)ar.onclick=function(){card.rows.push({name:'',price:null,pu:'元/斤',qty:null,qt:'',amt:0});save();renderCards();};
+    box.querySelectorAll('[data-delrow]').forEach(function(b){b.onclick=function(){card.rows.splice(Number(b.dataset.delrow),1);save();renderCards();};});
+    const rn=$('btnCardRename'); if(rn)rn.onclick=function(){openCardModal(card.id);};
+    const dl=$('btnCardDel'); if(dl)dl.onclick=function(){deleteCard(card.id);};
+  }else{
+    box.querySelectorAll('input[data-ri]').forEach(function(inp){
+      inp.onchange=function(){
+        const ri=Number(inp.dataset.ri),v=inp.value;
+        const row=card.rows[ri];
+        row.price=(v===''?null:Number(v));
+        if(row.price!=null&&row.qty!=null) row.amt=Math.round(row.price*row.qty*1000)/1000;
+        card.edited=true;
+        save();renderCards();
+      };
+    });
+  }
+}
+
+/* 新增 / 修改门店自建新品（弹窗）；字段 id 用 card 前缀，避免与库存自购表单 cmName/cmUnit 冲突 */
+function openCardModal(editId){
+  let m=$('cardModal');
+  if(!m){
+    m=document.createElement('div'); m.className='dl-modal'; m.id='cardModal';
+    m.innerHTML=
+      '<div class="dl-box">'+
+        '<h2 id="cardModalTitle">新增门店新品</h2>'+
+        '<div class="field" style="margin-top:10px"><label>产品名称（必填）</label><input type="text" id="cardName" placeholder="例如 凉拌木耳"></div>'+
+        '<div class="row two" style="margin-top:10px">'+
+          '<div class="field"><label>计量单位</label><input type="text" id="cardUnit" placeholder="碗 / 个 / 斤 / 笼"></div>'+
+          '<div class="field"><label>一批出多少份</label><input type="number" id="cardBatches" inputmode="decimal" placeholder="例如 40"></div>'+
+        '</div>'+
+        '<div class="field" style="margin-top:10px"><label>售价（元/份，可后补）</label><input type="number" id="cardSalePrice" inputmode="decimal" placeholder="例如 6"></div>'+
+        '<div class="lock-err" id="cardErr" style="margin-top:6px"></div>'+
+        '<div class="bar" style="margin-top:14px">'+
+          '<button class="btn" id="cardConfirm" type="button" style="flex:1">保存新品</button>'+
+          '<button class="btn plain" id="cardCancel" type="button" style="flex:1">取消</button>'+
+        '</div>'+
+      '</div>';
+    document.body.appendChild(m);
+  }
+  const editing=editId?S.costCards.find(c=>c.id===editId):null;
+  $('cardModalTitle').textContent=editing?'修改门店新品':'新增门店新品';
+  $('cardName').value=editing?editing.name:'';
+  $('cardUnit').value=editing?editing.unit:'';
+  $('cardBatches').value=editing&&editing.batches!=null?editing.batches:'';
+  $('cardSalePrice').value=editing&&editing.sale!=null?editing.sale:'';
+  $('cardErr').textContent='';
+  m.hidden=false;
+  const confirm=function(){
+    const name=$('cardName').value.trim();
+    if(!name){$('cardErr').textContent='先填产品名称';$('cardName').focus();return;}
+    const unit=$('cardUnit').value.trim()||'碗';
+    const batches=$('cardBatches').value===''?null:Number($('cardBatches').value);
+    const sale=$('cardSalePrice').value===''?null:Number($('cardSalePrice').value);
+    if(editing){
+      editing.name=name; editing.unit=unit; editing.batches=batches; editing.sale=sale;
+      editing.basis=batches?('一批 '+batches+' '+unit):'门店自制';
+    }else{
+      const card={id:'x'+Math.random().toString(36).slice(2,8),source:'shop',name:name,unit:unit,basis:batches?('一批 '+batches+' '+unit):'门店自制',batches:batches,sale:sale,rows:[],edited:true,unitCost:0};
+      S.costCards.push(card); S.costSel=card.id;
+    }
+    save(); m.hidden=true; renderCards();
+    toast(editing?'已保存修改':'已新增，接着加原料明细');
+  };
+  $('cardConfirm').onclick=confirm;
+  $('cardCancel').onclick=function(){m.hidden=true;};
+  $('cardName').focus();
+}
+
+function deleteCard(id){
+  const c=S.costCards.find(x=>x.id===id); if(!c)return;
+  if(!confirm('删除「'+c.name+'」？配方明细一并删除，此操作不可恢复。'))return;
+  S.costCards=S.costCards.filter(x=>x.id!==id);
+  if(S.costSel===id)S.costSel=S.costCards.length?S.costCards[0].id:null;
+  save(); renderCards(); toast('已删除该新品');
 }
 
 /* ============ 路由 ============ */
