@@ -260,9 +260,10 @@ function renderCards(){
     const s=cardStats(c);
     const active=c.id===card.id;
     const rateTag=s.rate==null?'<span class="mini">待定价</span>':'<span class="'+(s.rate>=0?'tag ok':'tag warn')+'">'+Math.round(s.rate*10)/10+'%</span>';
-    return '<div class="item" style="'+(active?'background:var(--accent-soft);border-radius:8px':'')+'">'+
-      '<div style="flex:1;min-width:0"><div class="nm">'+escHtml(c.name)+'</div><div class="mini">'+escHtml(c.unit||'份')+(isShopCard(c)?' · 门店新品':'')+'</div></div>'+
-      '<div class="bar" style="justify-content:flex-end;gap:8px"><input type="number" inputmode="decimal" class="priceIn" data-card="'+c.id+'" value="'+(s.sale==null?'':s.sale)+'" placeholder="定价" style="width:78px;padding:6px 8px;text-align:center">'+rateTag+'</div>'+
+    return '<div class="item price-row" style="'+(active?'background:var(--accent-soft);border-radius:8px':'')+'">'+
+      '<div class="pr-name"><div class="nm">'+escHtml(c.name)+'</div><div class="mini">'+escHtml(c.unit||'份')+(isShopCard(c)?' · 门店新品':'')+'</div></div>'+
+      '<div class="pr-price"><input type="number" inputmode="decimal" class="priceIn" data-card="'+c.id+'" value="'+(s.sale==null?'':s.sale)+'" placeholder="定价"></div>'+
+      '<div class="pr-rate">'+rateTag+'</div>'+
     '</div>';
   }).join('');
   const omHtml=om.rate==null
