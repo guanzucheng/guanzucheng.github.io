@@ -31,7 +31,7 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(251,249,245,.95);bac
 .mh-brand{color:#fff;font-size:23px}
 .mh-sub{background:var(--brand-orange);color:#fff;font-size:20px;font-weight:800;border-radius:8px;padding:4px 14px;letter-spacing:2px}
 .top-in{max-width:860px;margin:0 auto;padding:11px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.seg{display:flex;gap:8px;margin:14px 0 0}
+.seg{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
 .seg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .seg-btn{flex:1;font:inherit;font-weight:600;padding:10px 12px;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:8px;cursor:pointer;position:relative}
 .seg-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -339,17 +339,33 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
       <h2 id="staffFormTitle">添加人员</h2>
       <div class="row two">
         <div class="field"><label>姓名</label><input type="text" id="stName" placeholder="例如 王师傅"></div>
-        <div class="field"><label>岗位</label>
-          <select id="stRole">
-            <option>店长</option><option>烧汤师傅</option><option>面点师傅</option><option>油炸师傅</option><option selected>售卖员</option><option>收银</option><option>收碗</option>
-          </select>
-        </div>
-      </div>
-      <div class="row two" style="margin-top:10px">
         <div class="field"><label>用工类型</label>
           <select id="stType"><option value="full">全职</option><option value="temp">兼职</option></select>
         </div>
-        <div class="field"><label>全勤奖（元/月）</label><input type="number" id="stBonus" min="0" inputmode="decimal" placeholder="0"></div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>主要岗位（选一项）</label>
+        <div class="seg" id="stMainSkill">
+          <button type="button" class="seg-btn" data-skill-main="烧汤">烧汤</button>
+          <button type="button" class="seg-btn" data-skill-main="煎包">煎包</button>
+          <button type="button" class="seg-btn" data-skill-main="面点">面点</button>
+          <button type="button" class="seg-btn" data-skill-main="油炸">油炸</button>
+          <button type="button" class="seg-btn" data-skill-main="售卖">售卖</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>技能标签（可多选，方便随时调派）</label>
+        <div class="seg" id="stSkills">
+          <button type="button" class="seg-btn" data-skill-tag="烧汤">烧汤</button>
+          <button type="button" class="seg-btn" data-skill-tag="煎包">煎包</button>
+          <button type="button" class="seg-btn" data-skill-tag="面点">面点</button>
+          <button type="button" class="seg-btn" data-skill-tag="油炸">油炸</button>
+          <button type="button" class="seg-btn" data-skill-tag="售卖">售卖</button>
+        </div>
+      </div>
+      <div class="row two" style="margin-top:10px" id="stFullWrap">
+        <div class="field"><label>全勤奖（元/月，仅全职）</label><input type="number" id="stBonus" min="0" inputmode="decimal" placeholder="0"></div>
+        <div class="field"><label>可公休天数（天/月，仅全职）</label><input type="number" id="stRest" min="0" inputmode="decimal" placeholder="0"></div>
       </div>
       <div class="row two" style="margin-top:10px" id="stBaseWrap">
         <div class="field"><label id="stBaseLabel">月底薪（元/月）</label><input type="number" id="stBase" inputmode="decimal" placeholder="0"></div>
@@ -358,8 +374,8 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
         <div class="field"><label>小时工资（元/时）</label><input type="number" id="stHourly" inputmode="decimal" placeholder="0"></div>
       </div>
       <div class="row two" style="margin-top:10px">
-        <div class="field"><label>可公休天数（天/月）</label><input type="number" id="stRest" min="0" inputmode="decimal" placeholder="0"></div>
         <div class="field"><label>入职日期（可选）</label><input type="date" id="stStart"></div>
+        <div class="field"><label>离职日期（可选，填了即离职）</label><input type="date" id="stEnd"></div>
       </div>
       <div class="bar" style="margin-top:12px">
         <button class="btn" id="btnStaffSave" type="button">保存人员</button>
@@ -504,12 +520,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261125k"></script>
-<script src="cards-b.js?v=20261125k"></script>
-<script src="app1.js?v=20261125k"></script>
-<script src="app2.js?v=20261125k"></script>
-<script src="app3.js?v=20261125k"></script>
-<script src="app5.js?v=20261125k"></script>
-<script src="app4.js?v=20261125k"></script>
+<script src="cards-a.js?v=20261125l"></script>
+<script src="cards-b.js?v=20261125l"></script>
+<script src="app1.js?v=20261125l"></script>
+<script src="app2.js?v=20261125l"></script>
+<script src="app3.js?v=20261125l"></script>
+<script src="app5.js?v=20261125l"></script>
+<script src="app4.js?v=20261125l"></script>
 </body>
 </html>
