@@ -65,7 +65,7 @@ nav.tabs{position:sticky;top:52px;z-index:19;background:rgba(251,249,245,.95);ba
 .tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
 .tag.gray{background:#f0f3f0;color:var(--ink-2)}
 .tag.ok{background:#e3f1e8;color:var(--ok)}
-.tag.manager{background:#e6f3e9;color:#b8860b;font-weight:600}
+.tag.manager{background:#e57232;color:#fff;font-weight:700}
 .tag.warn{background:#fbecea;color:var(--warn)}
 .tag.out{background:var(--warn);color:#fff}
 .ck-hist-diffs{margin-top:6px;display:grid;gap:4px}
@@ -508,6 +508,19 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 <footer>单机版 · 数据只存在你自己的浏览器 · 不用注册、不产生费用</footer>
 </div>
 
+<div class="dl-modal" id="resetModal" hidden>
+  <div class="dl-box">
+    <h2>清空本机数据</h2>
+    <p class="hint">会清空本机所有日报、库存和盘点记录，需输入访问密码确认，避免误点。</p>
+    <input type="password" id="resetPwd" inputmode="text" placeholder="请输入访问密码" autocomplete="off">
+    <div class="lock-err" id="resetErr"></div>
+    <div class="bar" style="margin-top:10px">
+      <button class="btn" id="resetConfirm" type="button">确认清空</button>
+      <button class="btn plain" id="resetCancel" type="button">取消</button>
+    </div>
+  </div>
+</div>
+
 <div class="dl-modal" id="dlModal" hidden>
   <div class="dl-box">
     <h2 id="dlTitle">导出数据</h2>
@@ -523,12 +536,12 @@ h1.title span{color:var(--ink-3);font-size:13px;font-weight:400;margin-left:8px}
 
 <div class="toast" id="toast"></div>
 
-<script src="cards-a.js?v=20261126a"></script>
-<script src="cards-b.js?v=20261126a"></script>
-<script src="app1.js?v=20261126a"></script>
-<script src="app2.js?v=20261126a"></script>
-<script src="app3.js?v=20261126a"></script>
-<script src="app5.js?v=20261126a"></script>
-<script src="app4.js?v=20261126a"></script>
+<script src="cards-a.js?v=20261126c"></script>
+<script src="cards-b.js?v=20261126c"></script>
+<script src="app1.js?v=20261126c"></script>
+<script src="app2.js?v=20261126c"></script>
+<script src="app3.js?v=20261126c"></script>
+<script src="app5.js?v=20261126c"></script>
+<script src="app4.js?v=20261126c"></script>
 </body>
 </html>
