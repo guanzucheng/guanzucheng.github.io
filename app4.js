@@ -194,6 +194,7 @@ function renderCards(){
   const st=cardStats(card);
   const unit=card.unit||'份';
   const shop=isShopCard(card);
+  const tab=(S.cardTab==='price'?'price':'card');
 
   const opts=cards.map(function(c){
     const lab=isShopCard(c)?('✦ '+c.name+'（门店新品）'):c.name;
@@ -269,10 +270,14 @@ function renderCards(){
     : '<div class="item" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px"><div style="min-width:0"><div class="nm">综合毛利（已定价 '+om.n+' 项）</div><div class="mini">总售价 '+money(om.sale)+' 元 · 毛利额 '+money(om.gross)+' 元</div></div><div class="val" style="color:var(--accent);font-weight:700">'+om.rate+'%</div></div>';
 
   box.innerHTML=
-    '<div class="row two" style="align-items:start">'+
+    '<div class="seg" style="margin:0 0 12px">'+
+      '<button type="button" class="seg-btn'+(tab==='card'?' on':'')+'" data-cardtab="card">产品卡</button>'+
+      '<button type="button" class="seg-btn'+(tab==='price'?' on':'')+'" data-cardtab="price">产品定价</button>'+
+    '</div>'+
+    '<div id="seg-card"'+(tab==='card'?'':' hidden')+'>'+
       '<div class="card" style="margin:0">'+
         '<div class="bar" style="margin-bottom:12px;justify-content:space-between;gap:10px;align-items:end">'+
-          '<div class="field" style="flex:1;margin:0"><label>产品卡</label><select id="cardSel">'+opts+'</select></div>'+
+          '<div class="field" style="flex:1;margin:0"><label>选择产品</label><select id="cardSel">'+opts+'</select></div>'+
           '<button type="button" class="btn ghost" id="btnCardNew" style="width:auto;padding:10px 14px;white-space:nowrap">＋新增产品</button>'+
         '</div>'+
         '<div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">'+
@@ -295,13 +300,17 @@ function renderCards(){
         addRowBtn+
         '<p class="hint" style="margin-top:10px">'+hint+'</p>'+
       '</div>'+
+    '</div>'+
+    '<div id="seg-price"'+(tab==='price'?'':' hidden')+'>'+
       '<div class="card" style="margin:0">'+
-        '<h2>产品定价</h2>'+
         '<div class="list" style="margin-top:6px">'+priceRowsHtml+'</div>'+
         omHtml+
       '</div>'+
     '</div>';
 
+  box.querySelectorAll('[data-cardtab]').forEach(function(b){
+    b.onclick=function(){S.cardTab=b.dataset.cardtab;save();renderCards();};
+  });
   $('cardSel').onchange=function(){S.costSel=$('cardSel').value;save();renderCards();};
   $('cardSale').onchange=function(){const v=$('cardSale').value;card.sale=(v===''?null:Number(v));save();renderCards();};
   $('btnCardNew').onclick=function(){openCardModal(null);};
