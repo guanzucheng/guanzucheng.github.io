@@ -172,6 +172,17 @@ function cardStats(card){
 function isShopCard(c){ return !!c && c.source==='shop'; }
 function shopUnitOfPu(pu){ return String(pu||'').replace(/^元\//,'').trim(); }
 function escHtml(s){return String(s==null?'':s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+/* 综合毛利：金额加权（各产品各卖一份的混合口径），只统计已定价产品 */
+function overallMargin(){
+  const cards=S.costCards||[];
+  let sale=0, gross=0, n=0;
+  cards.forEach(function(c){
+    const s=cardStats(c);
+    if(s.sale!=null && s.gross!=null){ sale+=s.sale; gross+=s.gross; n++; }
+  });
+  if(sale<=0) return {n:n, sale:0, gross:0, rate:null};
+  return {n:n, sale:Math.round(sale*100)/100, gross:Math.round(gross*100)/100, rate:Math.round(gross/sale*1000)/10};
+}
 
 function renderCards(){
   const box=$('cardBox'); if(!box) return;
@@ -242,34 +253,66 @@ function renderCards(){
     ? '原料名、用量和进价按本店实际称量填写；进价×用量自动算一批金额，一批合计÷份数得单份成本，售价填好后自动算毛利与毛利率。'
     : '单价按当地进价修改；配方用量与总部保持一致、不可改；金额、单份成本、毛利与毛利率自动重算。水、大料等没有单价的项按固定分摊金额计算。';
 
+  /* 产品定价清单：与卡片内售价框同源，改一处两处同步 */
+  const om=overallMargin();
+  const priceRowsHtml=cards.map(function(c){
+    const s=cardStats(c);
+    const active=c.id===card.id;
+    const rateTag=s.rate==null?'<span class="mini">待定价</span>':'<span class="'+(s.rate>=0?'tag ok':'tag warn')+'">'+Math.round(s.rate*10)/10+'%</span>';
+    return '<div class="item" style="'+(active?'background:var(--accent-soft);border-radius:8px':'')+'">'+
+      '<div style="flex:1;min-width:0"><div class="nm">'+escHtml(c.name)+'</div><div class="mini">'+escHtml(c.unit||'份')+(isShopCard(c)?' · 门店新品':'')+'</div></div>'+
+      '<div class="bar" style="justify-content:flex-end;gap:8px"><input type="number" inputmode="decimal" class="priceIn" data-card="'+c.id+'" value="'+(s.sale==null?'':s.sale)+'" placeholder="定价" style="width:78px;padding:6px 8px;text-align:center">'+rateTag+'</div>'+
+    '</div>';
+  }).join('');
+  const omHtml=om.rate==null
+    ? '<div class="mini" style="margin-top:8px">还没有已定价产品，先在上面填售价。</div>'
+    : '<div class="item" style="border-top:1px solid var(--line);margin-top:6px;padding-top:10px"><div style="min-width:0"><div class="nm">综合毛利（已定价 '+om.n+' 项）</div><div class="mini">总售价 '+money(om.sale)+' 元 · 毛利额 '+money(om.gross)+' 元</div></div><div class="val" style="color:var(--accent);font-weight:700">'+om.rate+'%</div></div>';
+
   box.innerHTML=
-    '<div class="bar" style="margin-bottom:12px;justify-content:space-between;gap:10px;align-items:end">'+
-      '<div class="field" style="flex:1;margin:0"><label>选择产品</label><select id="cardSel">'+opts+'</select></div>'+
-      '<button type="button" class="btn ghost" id="btnCardNew" style="width:auto;padding:10px 14px;white-space:nowrap">＋新增产品</button>'+
-    '</div>'+
-    '<div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">'+
-      '<h2 style="margin:0">'+escHtml(card.name)+shopTag+'</h2>'+headActions+
-    '</div>'+
-    '<div class="bar" style="margin-top:4px"><span class="mini">'+escHtml(card.basis||'')+(card.basis?' · ':'')+'按'+unit+'计</span></div>'+
-    '<div class="row three" style="margin-top:12px">'+
-      '<div class="item"><div class="nm">单份成本（元/'+unit+'）</div><div class="val">'+r3(st.unit)+'</div></div>'+
-      '<div class="item"><div class="nm">单份毛利</div><div class="val">'+grossHtml+'</div></div>'+
-      '<div class="item"><div class="nm">毛利率</div><div class="val">'+rateHtml+'</div></div>'+
-    '</div>'+
-    '<div class="row two" style="margin-top:10px">'+
-      '<div class="field"><label>售价（元/'+unit+'，自己填）</label><input type="number" id="cardSale" inputmode="decimal" value="'+(card.sale==null?'':card.sale)+'" placeholder="例如 8"></div>'+
-      secondField+
-    '</div>'+
-    '<div style="overflow-x:auto;margin-top:12px">'+
-      '<table>'+headCol+'<thead><tr>'+headTh+'</tr></thead><tbody>'+rowsHtml+'</tbody>'+
-      '</table>'+
-    '</div>'+
-    addRowBtn+
-    '<p class="hint" style="margin-top:10px">'+hint+'</p>';
+    '<div class="row two" style="align-items:start">'+
+      '<div class="card" style="margin:0">'+
+        '<div class="bar" style="margin-bottom:12px;justify-content:space-between;gap:10px;align-items:end">'+
+          '<div class="field" style="flex:1;margin:0"><label>产品卡</label><select id="cardSel">'+opts+'</select></div>'+
+          '<button type="button" class="btn ghost" id="btnCardNew" style="width:auto;padding:10px 14px;white-space:nowrap">＋新增产品</button>'+
+        '</div>'+
+        '<div class="bar" style="justify-content:space-between;gap:10px;flex-wrap:wrap">'+
+          '<h2 style="margin:0">'+escHtml(card.name)+shopTag+'</h2>'+headActions+
+        '</div>'+
+        '<div class="bar" style="margin-top:4px"><span class="mini">'+escHtml(card.basis||'')+(card.basis?' · ':'')+'按'+unit+'计</span></div>'+
+        '<div class="row three" style="margin-top:12px">'+
+          '<div class="item"><div class="nm">单份成本（元/'+unit+'）</div><div class="val">'+r3(st.unit)+'</div></div>'+
+          '<div class="item"><div class="nm">单份毛利</div><div class="val">'+grossHtml+'</div></div>'+
+          '<div class="item"><div class="nm">毛利率</div><div class="val">'+rateHtml+'</div></div>'+
+        '</div>'+
+        '<div class="row two" style="margin-top:10px">'+
+          '<div class="field"><label>售价（元/'+unit+'，自己填）</label><input type="number" id="cardSale" inputmode="decimal" value="'+(card.sale==null?'':card.sale)+'" placeholder="例如 8"></div>'+
+          secondField+
+        '</div>'+
+        '<div style="overflow-x:auto;margin-top:12px">'+
+          '<table>'+headCol+'<thead><tr>'+headTh+'</tr></thead><tbody>'+rowsHtml+'</tbody>'+
+          '</table>'+
+        '</div>'+
+        addRowBtn+
+        '<p class="hint" style="margin-top:10px">'+hint+'</p>'+
+      '</div>'+
+      '<div class="card" style="margin:0">'+
+        '<h2>产品定价</h2>'+
+        '<div class="list" style="margin-top:6px">'+priceRowsHtml+'</div>'+
+        omHtml+
+      '</div>'+
+    '</div>';
 
   $('cardSel').onchange=function(){S.costSel=$('cardSel').value;save();renderCards();};
   $('cardSale').onchange=function(){const v=$('cardSale').value;card.sale=(v===''?null:Number(v));save();renderCards();};
   $('btnCardNew').onclick=function(){openCardModal(null);};
+  box.querySelectorAll('input.priceIn').forEach(function(inp){
+    inp.onchange=function(){
+      const c=S.costCards.find(function(x){return x.id===inp.dataset.card;});
+      if(!c)return;
+      const v=inp.value; c.sale=(v===''?null:Number(v));
+      save(); renderCards();
+    };
+  });
 
   if(shop){
     const bIn=$('cardBatches');
