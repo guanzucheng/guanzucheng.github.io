@@ -41,15 +41,17 @@ function staffCfg(){
   if(S.staffCfg.poolRate==null)S.staffCfg.poolRate=20;
   return S.staffCfg;
 }
-/* 月保本营业额：固定开支 ÷ 65% 综合毛利率（与运营成本页同口径） */
+/* 月保本营业额：固定开支 ÷ 成本卡实际综合毛利率（与运营成本页同口径） */
 function beMonthly(){
   const c=S.cost||{};
   const fixed=(Number(c.rent)||0)+(Number(c.water)||0)+(Number(c.labor)||0)+(Number(c.logistics)||0)+(Number(c.other)||0);
-  const be=fixed>0?Math.round(fixed/0.65*100)/100:0;
-  return {fixed,be};
+  const om=overallMargin();
+  const m=om.rate!=null?om.rate/100:0;
+  const be=(fixed>0&&m>0)?Math.round(fixed/m*100)/100:0;
+  return {fixed,be,margin:om.rate};
 }
-/* 超额利润（超额毛利）：当月营业额×65% 毛利 − 固定开支；不足保本记 0 */
-function monthProfit(rev){const {fixed}=beMonthly();return Math.max(Math.round((rev*0.65-fixed)*100)/100,0);}
+/* 超额利润（超额毛利）：当月营业额×综合毛利率 − 固定开支；不足保本记 0 */
+function monthProfit(rev){const {fixed,margin}=beMonthly();const m=margin!=null?margin/100:0;return Math.max(Math.round((rev*m-fixed)*100)/100,0);}
 
 function staffWage(e,m,avgComm){
   const att=attendance(e,m);
