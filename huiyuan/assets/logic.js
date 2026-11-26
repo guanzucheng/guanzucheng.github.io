@@ -132,7 +132,7 @@
     var cfg = {
       shopName: '眉间 · 半永久定妆',
       masterName: '主理人',
-      slogan: '一人一眉，按骿相设计',
+      slogan: '一人一眉，按骨相设计',
       password: '8888',
       pointsRate: 100,
       makeupDays: 30,
@@ -160,7 +160,7 @@
       source: '朋友圈', createdAt: addDays(t, -200), lastVisit: addDays(t, -62),
       totalSpent: 0, visits: 0,
       tags: ['要求自然'], note: '',
-      profile: { pregnant: '否', disease: '无', period: '否', allergy: '无', history: '2022 年做过一次难眉，底色偏浅', skin: '混合偏油' },
+      profile: { pregnant: '否', disease: '无', period: '否', allergy: '无', history: '2022 年做过一次岑眉，底色偏浅', skin: '混合偏油' },
       inviteCode: inviteCode('13800001234'), invitedBy: ''
     };
     var c2 = {
@@ -192,8 +192,8 @@
       points: [],
       invites: [],
       works: [
-        { id: uid('w'), label: '难眉 · 自然款', series: '大分子美版（三色机器）', image: '' },
-        { id: uid('w'), label: '丝难眉 · 柔难感', series: '大分子美版（三色机器）', image: '' },
+        { id: uid('w'), label: '岑眉 · 自然款', series: '大分子美版（三色机器）', image: '' },
+        { id: uid('w'), label: '丝岑眉 · 柔岑感', series: '大分子美版（三色机器）', image: '' },
         { id: uid('w'), label: '4D 丝绒眉', series: '中分子轻氧韩版（五色手工）', image: '' },
         { id: uid('w'), label: '氧气眉 · 空气感', series: '中分子轻氧韩版（五色手工）', image: '' },
         { id: uid('w'), label: '美瞳线 · 内眼线', series: '大分子美版（三色机器）', image: '' },
