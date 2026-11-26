@@ -1,5 +1,6 @@
 /* ============ 人员管理（全职 / 兼职，底薪扣缺勤款 + 超额利润提成均分） ============ */
 const STAFF_ROLES=['店长','烧汤师傅','面点师傅','油炸师傅','售卖员','收银','收碗'];
+const SKILLS=['烧汤','煎包','面点','油炸','售卖'];
 const ATT_OPTS=[['work','出勤'],['rest','休息'],['leave','请假']];
 let staffMonth=curMonthStr();
 let attDate=todayStr();
@@ -66,10 +67,10 @@ function staffWage(e,m,avgComm){
     deduct=Math.round(dayWage*att.leave*100)/100;
     fixed=Math.max(Math.round((base-deduct)*100)/100,0);
   }
-  /* 全勤奖：当月无请假，且实际休息天数不超过可公休天数；可公休留空则不限休息天数；填了金额才发 */
+  /* 全勤奖：仅全职。当月无请假，且实际休息天数不超过可公休天数；可公休留空则不限休息天数；兼职无全勤、不参与出勤/休息考核，奖金恒为 0 */
   const bonusRaw=Number(e.attBonus)||0;
   const restOk=att.restLimit==null||att.rest<=att.restLimit;
-  const bonus=(att.leave===0&&restOk)?Math.round(bonusRaw*100)/100:0;
+  const bonus=(e.type!=='temp'&&att.leave===0&&restOk)?Math.round(bonusRaw*100)/100:0;
   const comm=Math.round((Number(avgComm)||0)*100)/100;
   const total=Math.round((fixed+bonus+comm)*100)/100;
   return {att,days,fixed,deduct,bonus,comm,total,byHour,hours:att.hours,hourly};
@@ -117,17 +118,25 @@ function renderStaffSummary(rev,pool,on){
   ].map(([k,v])=>`<div class="field"><label>${k}</label><div style="font-weight:700;font-size:17px">${v}</div></div>`).join('');
 }
 
+function skillTags(e){
+  const main=SKILLS.includes(e.role)?e.role:'';
+  const extra=(Array.isArray(e.skills)?e.skills:[]).filter(s=>SKILLS.includes(s)&&s!==main);
+  let html='';
+  if(main)html+=`<span class="tag ok">${escStaff(main)}</span>`;
+  extra.forEach(s=>{html+=`<span class="tag gray">${escStaff(s)}</span>`;});
+  return html;
+}
 function renderStaffList(){
   const box=$('staffList'); if(!box)return;
   if(!S.staff.length){box.innerHTML='<div class="mini">还没有人员，先在上面添加。</div>';return;}
   box.innerHTML=S.staff.map(e=>{
     const tag=e.type==='temp'?'兼职':'全职';
-    const st=e.status==='off'?'<span class="tag warn">离职</span>':'<span class="tag ok">在职</span>';
     const baseTxt=e.type==='temp'?(e.hourly?('时薪 '+money(e.hourly||0)+' 元/时'):'未填时薪'):('底薪 '+money(e.base||0)+' 元/月');
+    const leaveTxt=e.leaveDate?` · 离职 ${escStaff(e.leaveDate)}`:'';
     return `<div class="item">
       <div>
-        <div class="nm">${escStaff(e.name)} ${st}</div>
-        <div class="sub">${escStaff(e.role)} · ${tag} · ${baseTxt}</div>
+        <div class="nm">${escStaff(e.name)} ${skillTags(e)}</div>
+        <div class="sub">${tag} · ${baseTxt}${leaveTxt}</div>
       </div>
       <div class="bar" style="margin-left:auto">
         <button class="btn plain" data-act="edit" data-id="${e.id}">改</button>
@@ -147,7 +156,9 @@ function renderAttBoard(){
     const btns=ATT_OPTS.map(([v,lab])=>`<button type="button" class="seg-btn ${cur===v?'on':''}" data-att="${v}" data-id="${e.id}" style="flex:0 1 auto;padding:6px 10px;font-size:12.5px">${lab}</button>`).join('');
     const ma=(e.monthAtt||{})[staffMonth]||{};
     const hours=ma.hours==null?'':ma.hours;
-    const hourField=e.type==='temp'?`<label class="mini" style="margin-right:12px">工时(小时) <input type="number" min="0" id="mh-${e.id}" value="${hours}" style="width:64px"></label>`:'';
+    /* 兼职工时框仅在当天选“出勤”时显示；休息/请假状态下不显示工时 */
+    const showHours=e.type==='temp'&&cur==='work';
+    const hourField=showHours?`<label class="mini" style="margin-right:12px">工时(小时) <input type="number" min="0" id="mh-${e.id}" value="${hours}" style="width:64px"></label>`:'';
     return `<div class="item">
       <div class="nm" style="min-width:74px">${escStaff(e.name)}</div>
       <div class="bar">${btns}${hourField}</div>
@@ -178,7 +189,7 @@ function renderPayroll(pool,avg,on){
       <td>${att.leave}</td>
       <td>${workTxt}</td>
       <td>${deductTxt}</td>
-      <td>${money(w.bonus)}</td>
+      <td>${e.type==='temp'?'—':money(w.bonus)}</td>
       <td>${money(w.comm)}</td>
       <td><b>${money(w.total)}</b></td>
     </tr>`;
@@ -201,14 +212,19 @@ function collectStaffForm(){
   const hv=$('stHourly')?$('stHourly').value.trim():'';
   const bv=$('stBase')?$('stBase').value.trim():'';
   const bn=$('stBonus')?$('stBonus').value.trim():'';
+  const mainBtn=document.querySelector('[data-skill-main].on');
+  const role=mainBtn?mainBtn.dataset.skillMain:'';
+  const skills=[...document.querySelectorAll('[data-skill-tag].on')].map(b=>b.dataset.skillTag);
   return {
     name:$('stName').value.trim(),
-    role:$('stRole').value,
+    role,
+    skills,
     type,
     base:type==='full'?(Number(bv)||0):0,
     hourly:type==='temp'&&hv!==''?Number(hv):null,
-    attBonus:bn!==''?Number(bn):null,
-    start:$('stStart').value
+    attBonus:type==='full'&&bn!==''?Number(bn):null,
+    start:$('stStart').value,
+    leaveDate:$('stEnd').value||null
   };
 }
 /* 用工类型互斥：全职只显示月底薪，兼职只显示小时工资（hidden 属性 + style.display 双保险，避免 grid 覆盖） */
@@ -216,6 +232,7 @@ function syncBaseLabel(){
   const temp=$('stType').value==='temp';
   const bw=$('stBaseWrap'); if(bw){bw.hidden=temp;bw.style.display=temp?'none':'';}
   const hw=$('stHourlyWrap'); if(hw){hw.hidden=!temp;hw.style.display=!temp?'none':'';}
+  const fw=$('stFullWrap'); if(fw){fw.hidden=temp;fw.style.display=temp?'none':'';}
   const lab=$('stBaseLabel'); if(lab)lab.textContent='月底薪（元/月）';
 }
 function onTypeChange(){ syncBaseLabel(); }
@@ -227,8 +244,10 @@ function switchStaffSeg(seg){
 }
 function resetStaffForm(){
   editingId=null;
-  ['stName','stStart','stBase','stHourly','stRest','stBonus'].forEach(id=>{const el=$(id);if(el)el.value='';});
-  $('stRole').value='售卖员';$('stType').value='full';
+  ['stName','stStart','stEnd','stBase','stHourly','stRest','stBonus'].forEach(id=>{const el=$(id);if(el)el.value='';});
+  document.querySelectorAll('[data-skill-main]').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('[data-skill-tag]').forEach(b=>b.classList.remove('on'));
+  $('stType').value='full';
   $('staffFormTitle').textContent='添加人员';
   $('btnStaffSave').textContent='保存人员';
   $('btnStaffCancel').hidden=true;
@@ -236,13 +255,16 @@ function resetStaffForm(){
 }
 function fillStaffForm(e){
   editingId=e.id;
-  $('stName').value=e.name;$('stRole').value=e.role;$('stType').value=e.type;
+  $('stName').value=e.name;$('stType').value=e.type;
+  document.querySelectorAll('[data-skill-main]').forEach(b=>b.classList.toggle('on',b.dataset.skillMain===e.role));
+  document.querySelectorAll('[data-skill-tag]').forEach(b=>b.classList.toggle('on',(e.skills||[]).includes(b.dataset.skillTag)));
   $('stBase').value=e.base==null?'':e.base;
   $('stHourly').value=e.hourly==null?'':e.hourly;
-  $('stBonus').value=e.attBonus==null?'':e.attBonus;
   const ma=(e.monthAtt||{})[staffMonth]||{};
-  $('stRest').value=ma.restLimit==null?'':ma.restLimit;
+  $('stBonus').value=(e.type!=='temp'&&e.attBonus!=null)?e.attBonus:'';
+  $('stRest').value=(e.type!=='temp'&&ma.restLimit!=null)?ma.restLimit:'';
   $('stStart').value=e.start;
+  $('stEnd').value=e.leaveDate||'';
   $('staffFormTitle').textContent='修改人员';
   $('btnStaffSave').textContent='保存修改';
   $('btnStaffCancel').hidden=false;
@@ -259,19 +281,23 @@ function staffSave(){
   }else{
     f.id='e'+Math.random().toString(36).slice(2,8);
     f.attend={};
-    f.status='on';
     e=f;
     S.staff.push(f);
     logAdd('staff','新增',f.name);
   }
-  /* 可公休天数按当前核算月份保存；留空则不设休息上限 */
+  /* 填了离职日期即视为离职，不参与当月工资与考勤；留空为在职。可公休天数仅全职记录，兼职不设公休上限 */
   if(e){
+    e.status=e.leaveDate?'off':'on';
     if(!e.monthAtt)e.monthAtt={};
     if(!e.monthAtt[staffMonth])e.monthAtt[staffMonth]={};
-    const restVal=$('stRest')?$('stRest').value.trim():'';
     const row=e.monthAtt[staffMonth];
-    if(restVal===''){delete row.restLimit;}
-    else{row.restLimit=Number(restVal)||0;}
+    if(e.type==='temp'){
+      delete row.restLimit;
+    }else{
+      const restVal=$('stRest')?$('stRest').value.trim():'';
+      if(restVal===''){delete row.restLimit;}
+      else{row.restLimit=Number(restVal)||0;}
+    }
   }
   save(); resetStaffForm(); renderStaff(); toast('已保存');
 }
@@ -307,6 +333,11 @@ function bindStaffEvents(){
   const mon=$('staffMonth'); if(mon)mon.addEventListener('change',()=>{staffMonth=mon.value||curMonthStr();renderStaff();});
   const ad=$('attDate'); if(ad)ad.addEventListener('change',()=>{attDate=ad.value||todayStr();renderAttBoard();});
   const ty=$('stType'); if(ty)ty.addEventListener('change',onTypeChange);
+  document.querySelectorAll('[data-skill-main]').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('[data-skill-main]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+  });
+  document.querySelectorAll('[data-skill-tag]').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
   document.querySelectorAll('[data-staffseg]').forEach(b=>b.onclick=()=>switchStaffSeg(b.dataset.staffseg));
   const pr=$('stPoolRate'); if(pr)pr.addEventListener('change',savePoolRate);
   const bs=$('btnStaffSave'); if(bs)bs.addEventListener('click',staffSave);
