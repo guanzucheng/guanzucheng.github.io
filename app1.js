@@ -191,15 +191,15 @@ function todayStrOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(
 function weekOf(d){const w=['周日','周一','周二','周三','周四','周五','周六'];return w[d.getDay()];}
 function weekLabel(dateStr){const d=new Date(dateStr+'T00:00:00');if(isNaN(d.getTime()))return '—';return weekOf(d);}
 function seed(){
-  return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:65}, ackLow:{}, staff:presetStaff(), staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u5'};
+  return {shopName:'我的门店', records:[], materials:MATERIALS.map(m=>Object.assign({},m,{price:defaultPrice(m.n),low:defaultLow(m.n)})), custom:[], checks:[], logs:[], cost:{rent:null,water:null,labor:null,logistics:null,other:null,margin:null}, ackLow:{}, staff:presetStaff(), staffCfg:{poolRate:20}, costCards:JSON.parse(JSON.stringify(PRESET_COST_CARDS)), mig:'u5'};
 }
 let S=load();
 function saveRaw(o){try{localStorage.setItem(KEY,JSON.stringify(o));}catch(e){}}
 function load(){try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);o.custom=o.custom||[];o.records=o.records||[];o.checks=o.checks||[];o.logs=o.logs||[];o.ackLow=o.ackLow||{};o.staff=(Array.isArray(o.staff)?o.staff:[]).map(normalizeStaff);
   o.costCards=Array.isArray(o.costCards)&&o.costCards.length?o.costCards.map(normalizeCostCard):JSON.parse(JSON.stringify(PRESET_COST_CARDS));
   syncPresetCards(o);
-  o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:65};
-  o.cost.margin=(o.cost.margin==null?65:o.cost.margin);
+  o.cost=o.cost||{rent:null,water:null,labor:null,logistics:null,other:null,margin:null};
+  o.cost.margin=(o.cost.margin==null?null:o.cost.margin);
   o.staffCfg=o.staffCfg||{}; if(o.staffCfg.poolRate==null)o.staffCfg.poolRate=20;
   if(o.cost.property!=null){o.cost.rent=(o.cost.rent||0)+o.cost.property;delete o.cost.property;}
   const oldUnit={};(o.materials||[]).forEach(m=>{if(m&&m.n)oldUnit[m.n]=m.unit;});
@@ -303,10 +303,11 @@ function costNum(id){const v=Number($(id).value);return isNaN(v)?0:v;}
 function costCalc(){
   const rent=costNum('cRent'), water=costNum('cWater'), logistics=costNum('cLogistics'), other=costNum('cOther');
   const labor=staffFixedTotal(staffMonth);
-  const margin=65;
+  const om=overallMargin();
+  const margin=om.rate;
   const fixed=Math.round((rent+water+labor+logistics+other)*100)/100;
-  const m=margin/100;
-  const beMonth=m>0?Math.round(fixed/m*100)/100:0;
+  const m=margin!=null?margin/100:0;
+  const beMonth=(m>0)?Math.round(fixed/m*100)/100:0;
   const beDay=Math.round(beMonth/30*100)/100;
   return {rent,water,labor,logistics,other,margin,fixed,beMonth,beDay};
 }
@@ -320,15 +321,21 @@ function renderCost(){
 }
 function drawCost(){
   const c=costCalc();
+  const rateTxt=c.margin==null?'<span class="mini">待成本卡定价</span>':c.margin+'%';
+  const hasBe=c.margin!=null&&c.margin>0;
+  const beTxt=hasBe?money(c.beMonth)+' 元 / 月':'<span class="mini">—</span>';
+  const beDayTxt=hasBe?money(c.beDay)+' 元 / 天':'<span class="mini">—</span>';
   $('costResult').innerHTML=
     `<div class="item"><div class="nm">月固定开支合计</div><div class="val">${money(c.fixed)} 元 / 月</div></div>
-     <div class="item"><div class="nm">月保本营业额</div><div class="val">${money(c.beMonth)} 元 / 月</div></div>
-     <div class="item"><div class="nm">日均盈亏平衡点</div><div class="val" style="color:var(--accent)">${money(c.beDay)} 元 / 天</div></div>`;
+     <div class="item"><div class="nm">综合毛利率</div><div class="val">${rateTxt}</div></div>
+     <div class="item"><div class="nm">月保本营业额</div><div class="val">${beTxt}</div></div>
+     <div class="item"><div class="nm">日均盈亏平衡点</div><div class="val" style="color:var(--accent)">${beDayTxt}</div></div>`;
 }
 function submitCost(){
   const rent=costNum('cRent'), water=costNum('cWater'), logistics=costNum('cLogistics'), other=costNum('cOther');
   const labor=staffFixedTotal(staffMonth);
-  S.cost={rent:rent||null,water:water||null,labor:labor||null,logistics:logistics||null,other:other||null,margin:65};
-  logAdd('cost','更新月度成本设置','房租（含物业） '+money(rent)+' · 水电 '+money(water)+' · 人工（人员固定工资） '+money(labor)+' · 物流 '+money(logistics)+' · 其它 '+money(other));
+  const om=overallMargin();
+  S.cost={rent:rent||null,water:water||null,labor:labor||null,logistics:logistics||null,other:other||null,margin:om.rate};
+  logAdd('cost','更新月度成本设置','房租（含物业） '+money(rent)+' · 水电 '+money(water)+' · 人工（人员固定工资） '+money(labor)+' · 物流 '+money(logistics)+' · 其它 '+money(other)+' · 综合毛利率 '+(om.rate==null?'待定价':om.rate+'%'));
   save(); drawCost(); toast('已保存成本设置');
 }
